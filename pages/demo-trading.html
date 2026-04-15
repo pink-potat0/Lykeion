@@ -2225,6 +2225,18 @@
                 });
             }
 
+            function playKachingTradeSound() {
+                try {
+                    if (!playKachingTradeSound._a) {
+                        playKachingTradeSound._a = new Audio('../assets/audio/kaching-sound-fx.mp3');
+                        playKachingTradeSound._a.preload = 'auto';
+                    }
+                    playKachingTradeSound._a.currentTime = 0;
+                    playKachingTradeSound._a.volume = 0.45;
+                    playKachingTradeSound._a.play().catch(() => {});
+                } catch {}
+            }
+
             const toastStack = document.getElementById('toast-stack');
             function toast(message, type = '') {
                 if (!toastStack) return;
@@ -2332,7 +2344,12 @@
                     event.preventDefault();
                     event.stopPropagation();
                     const amount = Number(buyBtn.getAttribute('data-quick-buy-sol')) || 1;
-                    executeBuy(snap.mint, amount, snap.mcUsd, snap);
+                    // Prefer live MC from the token map (streams in over time); fall back to row snapshot.
+                    const liveTok = tokenMap.get(snap.mint);
+                    const liveMc = liveTok ? computeUsdMc(liveTok) : 0;
+                    const mcForEntry = liveMc > 0 ? liveMc : (snap.mcUsd > 0 ? snap.mcUsd : 0);
+                    const ok = executeBuy(snap.mint, amount, mcForEntry, snap);
+                    if (ok) playKachingTradeSound();
                     return;
                 }
                 try { sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify(snap)); } catch {}

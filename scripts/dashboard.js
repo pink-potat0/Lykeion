@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let deckAnimating = false;
     let suppressClickUntil = 0;
 
-    const swipeAudio = new Audio("./public/audio/swipe.mp3");
+    const swipeAudio = new Audio("../assets/audio/swipe.mp3");
     swipeAudio.preload = "auto";
 
     function renderDeck() {

@@ -1953,7 +1953,7 @@ async function getBotResponse(userMessage) {
   return firstReply || "Sorry, I couldn't generate a response.";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function initLykeionChatUi() {
   const chatForm = document.getElementById("chat-form");
   const chatInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -2077,4 +2077,12 @@ document.addEventListener("DOMContentLoaded", () => {
     chatInput.disabled = isDisabled;
     if (sendBtn) sendBtn.disabled = isDisabled;
   }
-});
+}
+
+// This script may be injected after DOMContentLoaded (via bootstrap-secrets-remote),
+// so fire init immediately if the DOM is already parsed.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initLykeionChatUi);
+} else {
+  initLykeionChatUi();
+}
