@@ -52,6 +52,7 @@ document.getElementById('signinForm').addEventListener('submit', async (e) => {
   msgEl.className = 'auth-message loading';
 
   try {
+    await window.__firebaseReadyPromise;
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const userData = await getUserProfile(userCredential.user.uid);
     let displayUsername;
@@ -104,6 +105,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
   msgEl.className = 'auth-message loading';
 
   try {
+    await window.__firebaseReadyPromise;
     if (!username) {
       msgEl.textContent = 'Please enter a username.';
       msgEl.className = 'auth-message error';

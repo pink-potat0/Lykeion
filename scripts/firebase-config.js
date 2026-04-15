@@ -1,19 +1,33 @@
-// Firebase Configuration — paste values from Firebase Console → Project settings → Your apps.
-// Must use the compat API (firebase.*) because pages load firebase-*-compat.js scripts.
-
-const firebaseConfig = {
-  apiKey: "AIzaSyA5a1GI7b26FNB0DYNsYmISe5eV4UkMxeo",
-  authDomain: "lyceum-3e96c.firebaseapp.com",
-  projectId: "lyceum-3e96c",
-  storageBucket: "lyceum-3e96c.firebasestorage.app",
-  messagingSenderId: "733684640464",
-  appId: "1:733684640464:web:d87d71ee8dad109ba68cd5",
-  measurementId: "G-4J442VDM0P",
-};
-
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Loads Firebase web config from GET /api/firebase-config (Vercel / local server env vars).
+// Pages must be served from the same origin as the server (not file://).
+(function () {
+  var base =
+    typeof window !== "undefined" && window.LYKEION_API_BASE
+      ? String(window.LYKEION_API_BASE).replace(/\/$/, "")
+      : "";
+  window.__firebaseReadyPromise = fetch(base + "/api/firebase-config", { credentials: "same-origin" })
+    .then(function (r) {
+      if (!r.ok) {
+        return r
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (body) {
+            throw new Error((body && body.error) || "Firebase config HTTP " + r.status);
+          });
+      }
+      return r.json();
+    })
+    .then(function (config) {
+      if (!config || !config.apiKey) {
+        throw new Error("Firebase config missing apiKey.");
+      }
+      Object.keys(config).forEach(function (k) {
+        if (config[k] === "") delete config[k];
+      });
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config);
+      }
+    });
+})();

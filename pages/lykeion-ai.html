@@ -53,10 +53,12 @@
   <div class="cpotato-signature">© 2026 pinkpotato</div>
 
     <script src="../scripts/bootstrap-secrets.js"></script>
+    <script src="../scripts/bootstrap-secrets-fetch.js"></script>
     <script src="../scripts/cursor-utils.js"></script>
     <script src="../scripts/crypto-price.js"></script>
     <script src="../scripts/context-fetcher.js"></script>
     <script src="../scripts/chat-ui.js"></script>
-    <script src="../scripts/lykeion-ai.js"></script>
+    <!-- Loads lykeion-ai.js after merging /api/lykeion-secrets (Vercel HELIUS_API_KEY) into LYKEION_SECRETS -->
+    <script src="../scripts/bootstrap-secrets-remote.js"></script>
 </body>
 </html>

@@ -25,13 +25,20 @@ Output Format:
 const OPENAI_API_KEY = (typeof window !== "undefined" && window.LYKEION_SECRETS && String(window.LYKEION_SECRETS.openai || "").trim()) || "";
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const DEXSCREENER_API_BASE = "https://api.dexscreener.com/latest/dex";
-const HELIUS_API_KEY = (typeof window !== "undefined" && window.LYKEION_SECRETS && String(window.LYKEION_SECRETS.helius || "").trim()) || "";
-const SOLANA_RPC_ENDPOINTS = [
-  ...(HELIUS_API_KEY ? [`https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(HELIUS_API_KEY)}`] : []),
-  "https://api.mainnet-beta.solana.com",
-  "https://rpc.ankr.com/solana",
-  "https://solana.public-rpc.com",
-];
+
+function getHeliusKey() {
+  return (typeof window !== "undefined" && window.LYKEION_SECRETS && String(window.LYKEION_SECRETS.helius || "").trim()) || "";
+}
+
+function getSolanaRpcEndpoints() {
+  const k = getHeliusKey();
+  return [
+    ...(k ? [`https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(k)}`] : []),
+    "https://api.mainnet-beta.solana.com",
+    "https://rpc.ankr.com/solana",
+    "https://solana.public-rpc.com",
+  ];
+}
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const HOT_TOKEN_MIN_MARKETCAP_USD = 100000;
 const HOT_TOKEN_MIN_VOLUME_USD = 50000;
@@ -632,7 +639,7 @@ async function fetchTopTokensForLaunchpad(launchpadId) {
 
 async function solanaRpcCall(method, params) {
   let lastError = null;
-  for (const endpoint of SOLANA_RPC_ENDPOINTS) {
+  for (const endpoint of getSolanaRpcEndpoints()) {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
@@ -678,8 +685,9 @@ const WALLET_TX_PER_PAGE = 100;
 
 // ── Holdings via Helius DAS getAssetsByOwner ─────────────────────
 async function fetchWalletHoldings(address) {
-  if (!HELIUS_API_KEY) return { holdings: [], solLamports: 0 };
-  const url = `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(HELIUS_API_KEY)}`;
+  const hk = getHeliusKey();
+  if (!hk) return { holdings: [], solLamports: 0 };
+  const url = `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(hk)}`;
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -725,14 +733,15 @@ async function fetchWalletHoldings(address) {
 
 // ── Paginated enhanced transactions ─────────────────────────────
 async function fetchAllWalletTransactions(address) {
-  if (!HELIUS_API_KEY) return [];
+  const hk = getHeliusKey();
+  if (!hk) return [];
   const base = `https://api.helius.xyz/v0`;
   const all = [];
   let beforeSig;
   for (let page = 0; page < WALLET_TX_PAGES; page++) {
     let url =
       `${base}/addresses/${encodeURIComponent(address)}/transactions` +
-      `?api-key=${encodeURIComponent(HELIUS_API_KEY)}&limit=${WALLET_TX_PER_PAGE}`;
+      `?api-key=${encodeURIComponent(hk)}&limit=${WALLET_TX_PER_PAGE}`;
     if (beforeSig) url += `&before=${encodeURIComponent(beforeSig)}`;
     try {
       const res = await fetch(url);
@@ -904,8 +913,9 @@ async function fetchCurrentPricesAndNames(mints) {
 // ── Helius DAS getAssetBatch for missing token names ─────────────
 async function fetchTokenMetadataBatch(mints) {
   const result = new Map();
-  if (!HELIUS_API_KEY || !mints.length) return result;
-  const url = `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(HELIUS_API_KEY)}`;
+  const hk = getHeliusKey();
+  if (!hk || !mints.length) return result;
+  const url = `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(hk)}`;
   const BATCH = 50;
   for (let i = 0; i < mints.length; i += BATCH) {
     const chunk = mints.slice(i, i + BATCH);
@@ -930,9 +940,10 @@ async function fetchTokenMetadataBatch(mints) {
 
 // ── Helius DAS getAsset — single token image ─────────────────────
 async function fetchTokenImage(tokenAddress) {
-  if (!tokenAddress || !HELIUS_API_KEY) return "";
+  const hkImg = getHeliusKey();
+  if (!tokenAddress || !hkImg) return "";
   try {
-    const url = `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(HELIUS_API_KEY)}`;
+    const url = `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(hkImg)}`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1345,6 +1356,13 @@ async function getWalletAnalysisPayload(userMessage) {
     errorMessage: msg,
     textSummary: `Wallet ${wallet} | ${msg}`,
   });
+
+  if (!getHeliusKey()) {
+    return errorResult(
+      "Wallet analysis needs a Helius API key. Set HELIUS_API_KEY in Vercel (or .env locally), or use window.LYKEION_SECRETS.helius via local-secrets.js. " +
+        "Get a key at https://www.helius.dev/"
+    );
+  }
 
   try {
     // 1. Fetch holdings (with SOL balance) + all transactions in parallel
@@ -1887,14 +1905,20 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!chatForm || !chatInput) return;
 
   // Auth: redirect if logged out, load history if logged in
-  firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-      return;
-    }
-    currentUserId = user.uid;
-    await loadChatHistory();
-  });
+  window.__firebaseReadyPromise
+    .then(function () {
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
+        currentUserId = user.uid;
+        await loadChatHistory();
+      });
+    })
+    .catch(function (err) {
+      console.error("Firebase init failed:", err);
+    });
 
   async function loadChatHistory() {
     if (!currentUserId) return;

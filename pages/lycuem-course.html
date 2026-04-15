@@ -903,7 +903,7 @@
 
             <section class="lesson-section">
               <div class="info-box" style="background: rgba(255, 255, 255, 0.03); border-left: 3px solid rgba(var(--accent-rgb), 0.4);">
-                <p>Good luck niggers.</p>
+                <p>Good luck with your trading journey.</p>
               </div>
             </section>
           </div>
@@ -929,15 +929,19 @@
       }
     }
 
-    // Check auth state and load progress
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (user) {
-        await loadUserProgress();
-        // Load first lesson by default
-        loadChapterContent('1');
-      } else {
-        window.location.href = 'login.html';
-      }
+    // Check auth state and load progress (after Firebase config from /api/firebase-config)
+    window.__firebaseReadyPromise.then(function () {
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (user) {
+          await loadUserProgress();
+          // Load first lesson by default
+          loadChapterContent('1');
+        } else {
+          window.location.href = 'login.html';
+        }
+      });
+    }).catch(function (err) {
+      console.error('Firebase init failed:', err);
     });
 
     // Chapter navigation
@@ -966,6 +970,7 @@
     // Next Lesson Button Handler
     document.addEventListener('click', async (e) => {
       if (e.target.id === 'nextLessonBtn' || e.target.closest('#nextLessonBtn')) {
+        await window.__firebaseReadyPromise;
         const btn = e.target.closest('#nextLessonBtn') || e.target;
         const nextChapter = btn.dataset.nextChapter;
         const user = firebase.auth().currentUser;

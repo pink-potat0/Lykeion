@@ -604,9 +604,11 @@
     </a>
 
     <script src="../scripts/bootstrap-secrets.js"></script>
+    <script src="../scripts/bootstrap-secrets-fetch.js"></script>
     <script src="../scripts/cursor-utils.js"></script>
     <script>
-        (() => {
+        (async () => {
+            await (window.__lykeionSecretsPromise || Promise.resolve());
             const AGE_REFRESH_MS = 1000;
             const SOL_PRICE_REFRESH_MS = 60 * 1000;
             const MIN_MC_USD = 3800;

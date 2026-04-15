@@ -138,27 +138,33 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Load user data from Firestore and display username
-firebase.auth().onAuthStateChanged(async (user) => {
-  if (user) {
-    // Get user profile from Firestore
-    const userProfile = await getUserProfile(user.uid);
-    const greetingEl = document.getElementById('greeting');
+window.__firebaseReadyPromise
+  .then(function () {
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (user) {
+        // Get user profile from Firestore
+        const userProfile = await getUserProfile(user.uid);
+        const greetingEl = document.getElementById('greeting');
 
-    if (userProfile && userProfile.username) {
-      greetingEl.textContent = userProfile.username;
-      try {
-        localStorage.setItem('lykeion.username', userProfile.username);
-      } catch (e) { /* ignore */ }
-    } else {
-      const fallback = user.email ? user.email.split('@')[0] : 'user';
-      greetingEl.textContent = fallback;
-      try {
-        localStorage.setItem('lykeion.username', fallback);
-      } catch (e) { /* ignore */ }
-    }
-  } else {
-    // Not logged in, redirect to login
-    window.location.href = 'login.html';
-  }
-});
+        if (userProfile && userProfile.username) {
+          greetingEl.textContent = userProfile.username;
+          try {
+            localStorage.setItem('lykeion.username', userProfile.username);
+          } catch (e) { /* ignore */ }
+        } else {
+          const fallback = user.email ? user.email.split('@')[0] : 'user';
+          greetingEl.textContent = fallback;
+          try {
+            localStorage.setItem('lykeion.username', fallback);
+          } catch (e) { /* ignore */ }
+        }
+      } else {
+        // Not logged in, redirect to login
+        window.location.href = 'login.html';
+      }
+    });
+  })
+  .catch(function (err) {
+    console.error('Firebase init failed:', err);
+  });
 

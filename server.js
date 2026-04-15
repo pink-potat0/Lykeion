@@ -406,6 +406,34 @@ app.post('/api/openai-chat', async (req, res) => {
   }
 });
 
+// Non-secret client config (still treat as sensitive — anyone can call this URL).
+// Set HELIUS_API_KEY and SOLANA_TRACKER_API_KEY in Vercel / .env; the assistant page merges them into window.LYKEION_SECRETS.
+app.get('/api/lykeion-secrets', (req, res) => {
+  res.json({
+    helius: process.env.HELIUS_API_KEY || '',
+    solanaTracker: process.env.SOLANA_TRACKER_API_KEY || '',
+  });
+});
+
+// Firebase web client config (not a secret key — still restrict with Firebase console rules / domains).
+app.get('/api/firebase-config', (req, res) => {
+  const config = {
+    apiKey: process.env.FIREBASE_API_KEY || '',
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN || '',
+    projectId: process.env.FIREBASE_PROJECT_ID || '',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: process.env.FIREBASE_APP_ID || '',
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID || '',
+  };
+  if (!config.apiKey || !config.projectId) {
+    return res.status(503).json({
+      error: 'Firebase is not configured. Set FIREBASE_API_KEY and related env vars in Vercel or .env.',
+    });
+  }
+  res.json(config);
+});
+
 // Main chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
