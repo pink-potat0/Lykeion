@@ -625,8 +625,9 @@
             const MIGRATED_FRESH_GRACE_SECONDS = 5 * 60;
             const MAX_VISIBLE_ROWS = 24;
             const PUMPPORTAL_WS_URL = 'wss://pumpportal.fun/api/data';
-            const _stSec = (typeof window !== 'undefined' && window.LYKEION_SECRETS) || {};
-            const SOLANA_TRACKER_API_KEY = String(_stSec.solanaTracker || '').trim();
+            function getSolanaTrackerKey() {
+                return String((typeof window !== 'undefined' && window.LYKEION_SECRETS && window.LYKEION_SECRETS.solanaTracker) || '').trim();
+            }
             const SOLANA_TRACKER_GRADUATED_URLS = [
                 'https://data.solanatracker.io/tokens/multi/graduated',
                 'https://data.solanatracker.io/tokens/graduated',
@@ -1235,12 +1236,15 @@
 
             let solanaTrackerSampleLogged = false;
             async function fetchGraduatedFromSolanaTracker() {
-                if (!SOLANA_TRACKER_API_KEY) return;
+                if (!getSolanaTrackerKey() && typeof window.refreshLykeionSecrets === 'function') {
+                    await window.refreshLykeionSecrets();
+                }
+                if (!getSolanaTrackerKey()) return;
                 for (const url of SOLANA_TRACKER_GRADUATED_URLS) {
                     try {
                         const res = await fetch(url, {
                             cache: 'no-store',
-                            headers: { 'x-api-key': SOLANA_TRACKER_API_KEY }
+                            headers: { 'x-api-key': getSolanaTrackerKey() }
                         });
                         if (!res.ok) continue;
                         const data = await res.json();
@@ -1596,10 +1600,15 @@
 
             async function runTokenSearch(query) {
                 if (!searchResultsEl) return;
-                if (!SOLANA_TRACKER_API_KEY) {
-                    searchResultsEl.hidden = false;
-                    searchResultsEl.innerHTML = '<div class="search-empty">Configure Solana Tracker key (window.LYKEION_SECRETS.solanaTracker)</div>';
-                    return;
+                if (!getSolanaTrackerKey()) {
+                    if (typeof window.refreshLykeionSecrets === 'function') {
+                        await window.refreshLykeionSecrets();
+                    }
+                    if (!getSolanaTrackerKey()) {
+                        searchResultsEl.hidden = false;
+                        searchResultsEl.innerHTML = '<div class="search-empty">Add SOLANA_TRACKER_API_KEY in Vercel (or .env), redeploy, and hard-refresh. Tried /api/lykeion-secrets.</div>';
+                        return;
+                    }
                 }
                 const seq = ++searchSeq;
                 const trimmed = query.trim();
@@ -1614,7 +1623,7 @@
                     const url = `https://data.solanatracker.io/search?query=${encodeURIComponent(trimmed)}&limit=30&showAllPools=false`;
                     const res = await fetch(url, {
                         cache: 'no-store',
-                        headers: { 'x-api-key': SOLANA_TRACKER_API_KEY }
+                        headers: { 'x-api-key': getSolanaTrackerKey() }
                     });
                     if (seq !== searchSeq) return;
                     if (!res.ok) {

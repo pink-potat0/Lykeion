@@ -30,14 +30,50 @@ function getHeliusKey() {
   return (typeof window !== "undefined" && window.LYKEION_SECRETS && String(window.LYKEION_SECRETS.helius || "").trim()) || "";
 }
 
+/** Public mainnet RPCs only — use for getBalance so balance works even if Helius RPC misbehaves. */
+const PUBLIC_SOLANA_RPC_ENDPOINTS = [
+  "https://api.mainnet-beta.solana.com",
+  "https://rpc.ankr.com/solana",
+  "https://solana.public-rpc.com",
+];
+
 function getSolanaRpcEndpoints() {
   const k = getHeliusKey();
   return [
     ...(k ? [`https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(k)}`] : []),
-    "https://api.mainnet-beta.solana.com",
-    "https://rpc.ankr.com/solana",
-    "https://solana.public-rpc.com",
+    ...PUBLIC_SOLANA_RPC_ENDPOINTS,
   ];
+}
+
+async function solanaRpcCallPublic(method, params) {
+  let lastError = null;
+  for (const endpoint of PUBLIC_SOLANA_RPC_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "lykeion-wallet-pub",
+          method,
+          params,
+        }),
+      });
+      if (!res.ok) {
+        lastError = new Error(`RPC failed (${res.status})`);
+        continue;
+      }
+      const data = await res.json();
+      if (data?.error) {
+        lastError = new Error(data.error?.message || "RPC error");
+        continue;
+      }
+      return data?.result;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("All public RPC endpoints failed");
 }
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const HOT_TOKEN_MIN_MARKETCAP_USD = 100000;
@@ -60,7 +96,10 @@ function uniqueNonEmpty(items) {
 function extractTokenAddressCandidates(text) {
   const source = String(text || "");
   const matches = source.match(/[1-9A-HJ-NP-Za-km-z]{32,64}/g) || [];
-  return uniqueNonEmpty(matches.map(normalizeTokenAddress));
+  const uniq = uniqueNonEmpty(matches.map(normalizeTokenAddress));
+  // Prefer longest match (full Solana pubkey ~43–44 chars; avoids wrong 32-char substrings).
+  uniq.sort((a, b) => b.length - a.length);
+  return uniq;
 }
 
 function extractTokenAddress(text) {
@@ -706,6 +745,7 @@ async function fetchWalletHoldings(address) {
     });
     if (!res.ok) return { holdings: [], solLamports: 0 };
     const data = await res.json();
+    if (data?.error) return { holdings: [], solLamports: 0 };
     const items = Array.isArray(data?.result?.items) ? data.result.items : [];
     const holdings = [];
     for (const a of items) {
@@ -723,7 +763,7 @@ async function fetchWalletHoldings(address) {
       });
     }
     // Helius returns nativeBalance under result — try multiple field paths
-    const nb = data?.result?.nativeBalance;
+    const nb = data?.result?.nativeBalance ?? data?.result?.total?.nativeBalance;
     const solLamports = toNumeric(nb?.lamports ?? nb?.lamport ?? nb?.balance ?? 0);
     return { holdings, solLamports };
   } catch {
@@ -747,10 +787,17 @@ async function fetchAllWalletTransactions(address) {
       const res = await fetch(url);
       if (!res.ok) break;
       const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) break;
-      all.push(...data);
-      beforeSig = data[data.length - 1].signature;
-      if (data.length < WALLET_TX_PER_PAGE) break;
+      const rows = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.transactions)
+            ? data.transactions
+            : [];
+      if (!rows.length) break;
+      all.push(...rows);
+      beforeSig = rows[rows.length - 1].signature;
+      if (rows.length < WALLET_TX_PER_PAGE) break;
     } catch {
       break;
     }
@@ -792,7 +839,8 @@ function parseSwaps(txs, walletAddress, holdings) {
   }
 
   for (const tx of Array.isArray(txs) ? txs : []) {
-    const tsMs = toNumeric(tx.timestamp) * 1000;
+    const tsRaw = toNumeric(tx.timestamp) || toNumeric(tx.blockTime) || 0;
+    const tsMs = tsRaw > 1e12 ? tsRaw : tsRaw * 1000;
     let parsed = false;
 
     // Strategy 1: use events.swap (most accurate)
@@ -864,8 +912,8 @@ function parseSwaps(txs, walletAddress, holdings) {
       const tokensOut = tx.tokenTransfers.filter((tt) => tt.mint !== SOL_MINT && tt.tokenAmount > 0 && tt.fromUserAccount === walletAddress);
       const solChangeSol = walletSolChangeLam / 1e9;
 
-      // BUY: wallet lost SOL, received tokens
-      if (tx.type === "SWAP" && solChangeSol < -0.005 && tokensIn.length > 0) {
+      // BUY: wallet lost SOL, received tokens (do not require tx.type === SWAP — Helius labels vary)
+      if (solChangeSol < -0.005 && tokensIn.length > 0) {
         const spent = Math.abs(solChangeSol);
         for (const t of tokensIn) recordBuy(t.mint, spent / tokensIn.length, tsMs);
       }
@@ -1373,12 +1421,16 @@ async function getWalletAnalysisPayload(userMessage) {
 
     const { holdings, solLamports } = holdingsResult;
 
-    // Reliable SOL balance: DAS native balance first, fall back to getBalance RPC
+    // SOL balance: max(DAS, public RPC, full RPC chain) — public first avoids Helius-only quirks.
     let resolvedLamports = solLamports;
+    try {
+      const pubBal = await solanaRpcCallPublic("getBalance", [wallet, { commitment: "confirmed" }]);
+      resolvedLamports = Math.max(resolvedLamports, toNumeric(pubBal?.value) || 0);
+    } catch {}
     if (resolvedLamports <= 0) {
       try {
         const balResult = await solanaRpcCall("getBalance", [wallet, { commitment: "confirmed" }]);
-        resolvedLamports = toNumeric(balResult?.value) || 0;
+        resolvedLamports = Math.max(resolvedLamports, toNumeric(balResult?.value) || 0);
       } catch {}
     }
     const currentSol = resolvedLamports / 1e9;
@@ -1448,7 +1500,13 @@ async function getWalletAnalysisPayload(userMessage) {
     const currentUsd = currentSol * solUsd;
 
     if (!topTrades.length && currentSol <= 0) {
-      return errorResult("No trade data found. The wallet may be inactive or the API is temporarily unavailable.");
+      const hint =
+        txs.length === 0
+          ? " No on-chain swaps were parsed from recent transactions (empty or unsupported tx format). Confirm the address and Helius key; the wallet may also have no token activity."
+          : " No token PnL rows could be built from parsed swaps (try a wallet with recent DEX activity).";
+      return errorResult(
+        "No trade data to display. Balance is 0 SOL and no token trades were parsed." + hint
+      );
     }
 
     return {

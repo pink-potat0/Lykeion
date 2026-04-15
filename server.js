@@ -409,9 +409,14 @@ app.post('/api/openai-chat', async (req, res) => {
 // Non-secret client config (still treat as sensitive — anyone can call this URL).
 // Set HELIUS_API_KEY and SOLANA_TRACKER_API_KEY in Vercel / .env; the assistant page merges them into window.LYKEION_SECRETS.
 app.get('/api/lykeion-secrets', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.json({
-    helius: process.env.HELIUS_API_KEY || '',
-    solanaTracker: process.env.SOLANA_TRACKER_API_KEY || '',
+    helius: process.env.HELIUS_API_KEY || process.env.HELIUS_KEY || '',
+    solanaTracker:
+      process.env.SOLANA_TRACKER_API_KEY ||
+      process.env.SOLANA_TRACKER_KEY ||
+      process.env.SOLANATRACKER_API_KEY ||
+      '',
   });
 });
 

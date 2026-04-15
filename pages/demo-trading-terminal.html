@@ -1617,8 +1617,9 @@
             /** Remaining cost basis below this ⇒ position is closed (stops 0.000 SOL ghost rows after sells). */
             const MIN_OPEN_POSITION_SOL = 0.0005;
             const PUMPPORTAL_WS_URL = 'wss://pumpportal.fun/api/data';
-            const _stSec = (typeof window !== 'undefined' && window.LYKEION_SECRETS) || {};
-            const SOLANA_TRACKER_API_KEY = String(_stSec.solanaTracker || '').trim();
+            function getSolanaTrackerKey() {
+                return String((typeof window !== 'undefined' && window.LYKEION_SECRETS && window.LYKEION_SECRETS.solanaTracker) || '').trim();
+            }
             const SOL_PRICE_URLS = [
                 'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd',
                 'https://lite-api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112',
@@ -3194,7 +3195,7 @@
             function playKachingTradeSound() {
                 try {
                     if (!playKachingTradeSound._a) {
-                        playKachingTradeSound._a = new Audio('kaching-sound-fx.mp3');
+                        playKachingTradeSound._a = new Audio('../assets/audio/kaching-sound-fx.mp3');
                         playKachingTradeSound._a.preload = 'auto';
                     }
                     const a = playKachingTradeSound._a;
@@ -3936,15 +3937,18 @@
 
             // Historical trades: Solana Tracker GET /trades/{token} (see OpenAPI — use sortDirection, not sortBy/limit)
             async function seedHistoricalTrades() {
-                if (!SOLANA_TRACKER_API_KEY) {
-                    console.warn('[SolanaTracker] Set window.LYKEION_SECRETS.solanaTracker (e.g. via scripts/local-secrets.js) to load trades.');
-                    return;
+                if (!getSolanaTrackerKey()) {
+                    if (typeof window.refreshLykeionSecrets === 'function') await window.refreshLykeionSecrets();
+                    if (!getSolanaTrackerKey()) {
+                        console.warn('[SolanaTracker] Add SOLANA_TRACKER_API_KEY in Vercel / .env; served via /api/lykeion-secrets.');
+                        return;
+                    }
                 }
                 const url = 'https://data.solanatracker.io/trades/' + encodeURIComponent(MINT) + '?sortDirection=DESC';
                 try {
                     const res = await fetch(url, {
                         cache: 'no-store',
-                        headers: { 'x-api-key': SOLANA_TRACKER_API_KEY },
+                        headers: { 'x-api-key': getSolanaTrackerKey() },
                     });
                     if (!res.ok) {
                         console.warn('[SolanaTracker] trades', res.status, MINT);
@@ -4055,7 +4059,7 @@
 
             // Fetch OHLC candles from Solana Tracker and seed full OHLC directly into buckets
             async function seedHistoricalCandles() {
-                if (!SOLANA_TRACKER_API_KEY) return;
+                if (!getSolanaTrackerKey()) return;
                 try {
                     const bucketLabel = chartBucketSec <= 5 ? '5s'
                         : chartBucketSec <= 15 ? '15s'
@@ -4065,7 +4069,7 @@
                         + '?type=' + bucketLabel;
                     const res = await fetch(url, {
                         cache: 'no-store',
-                        headers: { 'x-api-key': SOLANA_TRACKER_API_KEY },
+                        headers: { 'x-api-key': getSolanaTrackerKey() },
                     });
                     if (!res.ok) return;
                     const json = await res.json();
