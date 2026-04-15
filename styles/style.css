@@ -1559,7 +1559,7 @@ h1 {
     }
 
     .course-main {
-        margin-top: 100px;
+        margin-top: 72px;
         margin-bottom: 20px;
     }
 
@@ -2026,9 +2026,9 @@ h1 {
         width: 100%;
         max-width: none;
         margin: 0;
-        margin-top: 78px;
-        height: calc(100vh - 172px);
-        max-height: calc(100vh - 180px);
+        margin-top: 52px;
+        height: calc(100vh - 146px);
+        max-height: calc(100vh - 154px);
         padding: 9px 9px 8px;
         border-radius: 10px;
     }
