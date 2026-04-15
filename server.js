@@ -510,7 +510,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📝 Make sure to set OPENAI_API_KEY in your .env file`);
-});
+// Vercel serverless runs this file without listening; local dev uses app.listen.
+module.exports = app;
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📝 Make sure to set OPENAI_API_KEY in your .env file`);
+  });
+}
