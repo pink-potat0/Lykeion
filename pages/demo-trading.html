@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lykeion demo trading placeholder page.">
+    <title>Lykeion - Demo Trading</title>
+    <link rel="icon" type="image/png" href="../assets/icons/favicon.png">
+    <link rel="apple-touch-icon" href="../assets/icons/favicon.png">
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'NCLNeovibes Demo';
+            src: url('../assets/fonts/NCLNeovibes-Demo.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: block;
+        }
+        .navbar { display: flex; align-items: center; gap: 16px; }
+        .token-search { position: relative; flex: 1; max-width: 520px; margin: 0 auto; }
+        .token-search input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            color: inherit;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 120ms ease, background 120ms ease;
+        }
+        .token-search input:focus {
+            border-color: rgba(255,255,255,0.32);
+            background: rgba(255,255,255,0.06);
+        }
+        .token-search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            max-height: 60vh;
+            overflow-y: auto;
+            background: rgba(18,18,22,0.96);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 6px;
+            z-index: 1000;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+        }
+        .token-search-results[hidden] { display: none; }
+        .search-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+        .search-result:hover { background: rgba(255,255,255,0.06); }
+        .search-result img, .search-result .no-img {
+            width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
+            background: rgba(255,255,255,0.06); flex: 0 0 28px;
+        }
+        .search-result .sr-symbol { font-weight: 600; font-size: 13px; }
+        .search-result .sr-name { font-size: 12px; opacity: 0.7; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-result .sr-mc { font-size: 12px; opacity: 0.85; font-variant-numeric: tabular-nums; }
+        .search-result .sr-mint { font-size: 11px; opacity: 0.55; font-family: ui-monospace, Menlo, monospace; }
+        .search-empty { padding: 14px; text-align: center; opacity: 0.6; font-size: 13px; }
+
+        .demo-token-row { min-width: 0; }
+        .demo-token-meta { min-width: 0; overflow: hidden; }
+        .demo-token-meta strong {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .demo-token-meta .demo-token-ticker {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            max-width: 45%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .demo-token-meta .demo-token-name {
+            flex: 1 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .demo-token-meta .demo-token-copy {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .demo-token-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        @media (max-width: 640px) {
+            .token-search { margin: 0 8px; }
+            .demo-token-meta strong { font-size: 13px; }
+            .demo-token-meta .demo-token-name { font-size: 12px; }
+        }
+
+        .wallet-hud {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+        .wallet-hud .wh-bal { font-weight: 600; }
+        button.wallet-hud.wallet-hud--trigger {
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
+            margin: 0;
+        }
+        button.wallet-hud.wallet-hud--trigger:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+        }
+
+        .demo-token-row { cursor: pointer; }
+        .demo-token-row.is-empty { cursor: default; }
+        .demo-token-row.has-position { box-shadow: inset 3px 0 0 #4ade80; }
+        .demo-token-buy { position: relative; z-index: 2; }
+
+        .toast-stack {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(20,20,24,0.96);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 13px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            min-width: 220px;
+            animation: toast-in 180ms ease-out;
+        }
+        .toast.is-pos { border-color: rgba(74,222,128,0.4); }
+        .toast.is-neg { border-color: rgba(248,113,113,0.4); }
+        .toast.is-err { border-color: rgba(248,113,113,0.6); background: rgba(40,20,20,0.96); }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .term-tx-empty { padding: 12px; opacity: 0.4; font-size: 12px; }
+
+        .demo-portfolio-scroll {
+            flex: 1; min-height: 0; overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .demo-portfolio-summary {
+            padding: 0 0 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .portfolio-balance-hero {
+            border-radius: 14px;
+            padding: 22px 24px 20px;
+            background: linear-gradient(145deg, #4f46e5 0%, #5b21b6 48%, #6d28d9 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 20px rgba(15, 10, 40, 0.35);
+            text-align: left;
+        }
+        .portfolio-hero-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 8px;
+        }
+        .portfolio-hero-usd {
+            font-size: clamp(2.25rem, 6vw, 3.35rem);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: #f8fafc;
+            font-variant-numeric: tabular-nums;
+        }
+        .portfolio-hero-sol {
+            margin-top: 6px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.88);
+            font-variant-numeric: tabular-nums;
+        }
+        .portfolio-hero-hint {
+            margin-top: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .demo-portfolio-stats-secondary {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 4px 4px 0;
+        }
+        .demo-portfolio-stats-secondary .demo-portfolio-summary-row {
+            font-size: 18px;
+        }
+        .demo-portfolio-stats-secondary .demo-portfolio-label {
+            font-size: 12px;
+            opacity: 0.55;
+        }
+        .demo-portfolio-stats-secondary .demo-portfolio-value {
+            font-size: 19px;
+            font-weight: 700;
+        }
+        .demo-portfolio-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 14px;
+        }
+        .demo-portfolio-label {
+            opacity: 0.5;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .demo-portfolio-value { font-variant-numeric: tabular-nums; font-weight: 600; }
+        #portfolio-pnl-summary.is-pos { color: #4ade80; }
+        #portfolio-pnl-summary.is-neg { color: #f87171; }
+        #portfolio-pnl-7d-summary.is-pos { color: #4ade80; }
+        #portfolio-pnl-7d-summary.is-neg { color: #f87171; }
+        #portfolio-hitrate-summary.is-pos { color: #4ade80; }
+        #portfolio-hitrate-summary.is-neg { color: #f87171; }
+        .portfolio-reset-btn {
+            align-self: flex-start;
+            margin-top: 2px;
+            background: rgba(248,113,113,0.12);
+            border: 1px solid rgba(248,113,113,0.3);
+            color: #fca5a5;
+            padding: 5px 10px; font-size: 11px; border-radius: 6px;
+            cursor: pointer;
+        }
+        .portfolio-reset-btn:hover { background: rgba(248,113,113,0.2); }
+        .portfolio-7d-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .portfolio-share-7d-btn {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(129, 140, 248, 0.45);
+            background: rgba(79, 70, 229, 0.35);
+            color: #e8e8f0;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .portfolio-share-7d-btn:hover { background: rgba(99, 102, 241, 0.45); }
+        .demo-portfolio-section-title {
+            margin: 12px 14px 6px; font-size: 10px;
+            text-transform: uppercase; letter-spacing: 0.6px;
+            opacity: 0.45; font-weight: 600;
+        }
+        .portfolio-history-list {
+            max-height: 220px; overflow-y: auto;
+            padding: 0 8px 12px;
+        }
+        .portfolio-hist-row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 10px; padding: 8px 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+        }
+        .portfolio-hist-row .ph-main { min-width: 0; line-height: 1.4; }
+        .portfolio-hist-row .ph-age { opacity: 0.5; font-size: 10.5px; white-space: nowrap; }
+        .portfolio-hist-row .ph-pnl { font-variant-numeric: tabular-nums; font-weight: 600; margin-left: 6px; }
+        .portfolio-hist-row .ph-pnl.is-pos { color: #4ade80; }
+        .portfolio-hist-row .ph-pnl.is-neg { color: #f87171; }
+        .portfolio-hist-row .ph-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .portfolio-hist-pnl-card {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(129, 140, 248, 0.45);
+            background: rgba(79, 70, 229, 0.35);
+            color: #e8e8f0;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .portfolio-hist-pnl-card:hover { background: rgba(99, 102, 241, 0.45); }
+
+        .pnl-card-modal {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .pnl-card-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+        }
+        .pnl-card-dialog {
+            position: relative;
+            background: #0b0d12;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 22px;
+            max-width: 760px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .pnl-card-close {
+            position: absolute; top: 10px; right: 12px;
+            background: transparent; border: 0; color: #fff;
+            font-size: 22px; cursor: pointer; opacity: 0.7;
+        }
+        .pnl-card-close:hover { opacity: 1; }
+        .pnl-card-preview { margin-top: 6px; }
+        .pnl-card-actions {
+            display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;
+        }
+        .pnl-card-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #fff;
+            padding: 9px 18px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+        }
+        .pnl-card-btn:hover { background: rgba(255,255,255,0.14); }
+        .pnl-card-btn.is-primary {
+            background: #4ade80; color: #051a09; border-color: transparent;
+        }
+        .pnl-card-btn.is-primary:hover { background: #6ee093; }
+
+        .pnl-handle-setup-modal { z-index: 16000; }
+        .pnl-handle-dialog { max-width: 400px; padding-bottom: 18px; }
+        .pnl-handle-title {
+            margin: 0 0 8px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .pnl-handle-hint {
+            margin: 0 0 14px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: rgba(230, 230, 234, 0.65);
+        }
+        .pnl-handle-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.05);
+            color: #f4f4f8;
+            font: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            margin-bottom: 16px;
+        }
+        .pnl-handle-input:focus {
+            outline: none;
+            border-color: rgba(74, 222, 128, 0.45);
+            box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.2);
+        }
+        .pnl-handle-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .portfolio-modal-root[hidden] { display: none !important; }
+        .portfolio-modal-root:not([hidden]) {
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: max(16px, env(safe-area-inset-bottom));
+            box-sizing: border-box;
+        }
+        .portfolio-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(4,4,8,0.72);
+            backdrop-filter: blur(10px);
+            border: 0;
+            cursor: pointer;
+        }
+        .portfolio-modal-dialog {
+            position: relative;
+            z-index: 1;
+            width: min(960px, calc(100vw - 48px));
+            max-width: 96vw;
+            min-height: min(520px, 70vh);
+            max-height: min(92vh, 920px);
+            background: rgba(14,14,20,0.98);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            box-shadow: 0 28px 80px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .portfolio-modal-dialog header {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 15px;
+            font-weight: 600;
+            flex: 0 0 auto;
+        }
+        .portfolio-modal-dialog header button {
+            margin-left: auto;
+            background: transparent;
+            border: 0;
+            color: inherit;
+            cursor: pointer;
+            opacity: 0.65;
+            font-size: 20px;
+            line-height: 1;
+            padding: 4px 8px;
+        }
+        .portfolio-modal-dialog .demo-portfolio-scroll {
+            padding: 12px 16px 16px;
+        }
+        .portfolio-modal-dialog .portfolio-history-list {
+            max-height: min(420px, 42vh) !important;
+        }
+        .positions-list { overflow-y: auto; flex: 1; }
+        .position-item {
+            display: grid; grid-template-columns: 1fr auto; gap: 4px 8px;
+            padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px; cursor: pointer;
+        }
+        .position-item:hover { background: rgba(255,255,255,0.04); }
+        .position-item .pi-sym { font-weight: 600; }
+        .position-item .pi-pnl { font-variant-numeric: tabular-nums; font-weight: 600; }
+        .position-item .pi-pnl.is-pos { color: #4ade80; }
+        .position-item .pi-pnl.is-neg { color: #f87171; }
+        .position-item .pi-meta { font-size: 11px; opacity: 0.55; grid-column: 1 / 3; }
+
+    </style>
+</head>
+<body class="page-demo-trading">
+    <div class="cursor-glow"></div>
+    <div class="background-pattern"></div>
+
+    <nav class="navbar">
+        <span class="nav-logo">Lykeion</span>
+        <div class="token-search" role="search">
+            <input id="token-search-input" type="search" autocomplete="off" spellcheck="false" placeholder="Search pump.fun tokens by name, symbol or CA..." />
+            <div id="token-search-results" class="token-search-results" hidden></div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <button type="button" class="wallet-hud wallet-hud--trigger" id="wh-positions-btn" title="Open demo portfolio" aria-expanded="false" aria-controls="positions-panel">
+                <span class="wh-bal" id="wh-bal">5.000 SOL</span>
+            </button>
+            <a href="https://x.com/_ppotat0"><img src="../assets/icons/icons8-x-50.png" alt="Close" class="x-icon"></a>
+        </div>
+    </nav>
+
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <div class="portfolio-modal-root" id="positions-panel" hidden>
+        <button type="button" class="portfolio-modal-backdrop" id="portfolio-modal-backdrop" aria-label="Close portfolio"></button>
+        <div class="portfolio-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="portfolio-modal-title">
+            <header>
+                <span id="portfolio-modal-title">Demo portfolio</span>
+                <button type="button" id="positions-close" aria-label="Close">×</button>
+            </header>
+            <div class="demo-portfolio-scroll">
+                <div class="demo-portfolio-summary">
+                    <div class="portfolio-balance-hero">
+                        <div class="portfolio-hero-label">Portfolio</div>
+                        <div class="portfolio-hero-usd" id="portfolio-bal-usd">$0.00</div>
+                        <div class="portfolio-hero-sol" id="portfolio-bal-summary">0.000000 SOL</div>
+                        <div class="portfolio-hero-hint">Demo balance · USD ≈ spot SOL</div>
+                    </div>
+                    <div class="demo-portfolio-stats-secondary">
+                        <div class="demo-portfolio-summary-row">
+                            <span class="demo-portfolio-label">Wallet PnL</span>
+                            <span class="demo-portfolio-value" id="portfolio-pnl-summary">+0.000 SOL</span>
+                        </div>
+                        <div class="demo-portfolio-summary-row">
+                            <span class="demo-portfolio-label">Hit rate</span>
+                            <span class="demo-portfolio-value" id="portfolio-hitrate-summary">—</span>
+                        </div>
+                        <div class="demo-portfolio-summary-row">
+                            <span class="demo-portfolio-label">7-day PnL</span>
+                            <div class="portfolio-7d-actions">
+                                <span class="demo-portfolio-value" id="portfolio-pnl-7d-summary">—</span>
+                                <button type="button" class="portfolio-share-7d-btn" id="portfolio-share-7d-btn" title="Share a card with 7-day realized PnL">Share card</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="wh-reset-btn" class="portfolio-reset-btn" title="Reset virtual wallet">Reset wallet</button>
+                </div>
+                <h5 class="demo-portfolio-section-title">Open positions</h5>
+                <div class="positions-list" id="positions-list"></div>
+                <h5 class="demo-portfolio-section-title">Your top trades</h5>
+                <div class="portfolio-history-list" id="portfolio-history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <main class="demo-board-main">
+        <div class="demo-mobile-tabs" role="tablist" aria-label="Demo board tabs">
+            <button class="demo-tab-btn is-active" data-tab-target="new" role="tab" aria-selected="true">new</button>
+            <button class="demo-tab-btn" data-tab-target="soon" role="tab" aria-selected="false">soon</button>
+            <button class="demo-tab-btn" data-tab-target="migrated" role="tab" aria-selected="false">migrated</button>
+        </div>
+        <div class="demo-board-columns">
+            <section class="demo-board-column is-active" data-tab="new">
+                <h2 class="demo-board-title">new</h2>
+                <div class="demo-token-list">
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                </div>
+            </section>
+
+            <section class="demo-board-column" data-tab="soon">
+                <h2 class="demo-board-title">soon</h2>
+                <div class="demo-token-list">
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                </div>
+            </section>
+
+            <section class="demo-board-column" data-tab="migrated">
+                <h2 class="demo-board-title">migrated</h2>
+                <div class="demo-token-list">
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                    <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <a href="dashboard.html" class="floating-back-btn" title="Go back">
+        <span>←</span>
+    </a>
+
+    <script src="../scripts/bootstrap-secrets.js"></script>
+    <script src="../scripts/cursor-utils.js"></script>
+    <script>
+        (() => {
+            const AGE_REFRESH_MS = 1000;
+            const SOL_PRICE_REFRESH_MS = 60 * 1000;
+            const MIN_MC_USD = 3800;
+            const MAX_MC_USD = 17000;
+            const DROP_MC_USD = 3000;
+            const MAX_TOKEN_AGE_SECONDS = 60 * 60;
+            const MIN_SOON_MC_USD = 10000;
+            const MIN_SOON_VOL_USD = 10000;
+            const SOON_MAX_AGE_SECONDS = 24 * 60 * 60;
+            const MIN_MIGRATED_MC_USD = 10000;
+            const MIN_MIGRATED_VOL_USD = 15000;
+            const MIGRATED_MAX_AGE_SECONDS = 72 * 60 * 60;
+            const MIGRATED_STALE_SECONDS = 15 * 60;
+            const MIGRATED_FRESH_GRACE_SECONDS = 5 * 60;
+            const MAX_VISIBLE_ROWS = 24;
+            const PUMPPORTAL_WS_URL = 'wss://pumpportal.fun/api/data';
+            const _stSec = (typeof window !== 'undefined' && window.LYKEION_SECRETS) || {};
+            const SOLANA_TRACKER_API_KEY = String(_stSec.solanaTracker || '').trim();
+            const SOLANA_TRACKER_GRADUATED_URLS = [
+                'https://data.solanatracker.io/tokens/multi/graduated',
+                'https://data.solanatracker.io/tokens/graduated',
+                'https://data.solanatracker.io/search?bonded=true&sortBy=createdAt&sortOrder=desc&limit=50'
+            ];
+            const SOLANA_TRACKER_REFRESH_MS = 30 * 1000;
+            const SOL_PRICE_URLS = [
+                'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd',
+                'https://lite-api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112',
+                'https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT'
+            ];
+            const tabButtons = Array.from(document.querySelectorAll('.demo-tab-btn'));
+            const tabColumns = Array.from(document.querySelectorAll('.demo-board-column[data-tab]'));
+            const newColumnList = document.querySelector('.demo-board-column[data-tab="new"] .demo-token-list');
+            const soonColumnList = document.querySelector('.demo-board-column[data-tab="soon"] .demo-token-list');
+            const migratedColumnList = document.querySelector('.demo-board-column[data-tab="migrated"] .demo-token-list');
+
+            const tokenMap = new Map();
+            const subscribedMints = new Set();
+            const metadataFetched = new Set();
+            let solPriceUsd = 170;
+            let ws = null;
+            let wsReconnectTimer = null;
+            let wsReconnectAttempts = 0;
+            let renderScheduled = false;
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function formatCompactNumber(value) {
+                const num = Number(value);
+                if (!Number.isFinite(num) || num <= 0) return 'N/A';
+                if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+                if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+                if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+                return String(Math.round(num));
+            }
+
+            function parseCreatedMs(createdTimestamp) {
+                if (typeof createdTimestamp === 'string' && createdTimestamp.trim()) {
+                    const asNumber = Number(createdTimestamp);
+                    if (Number.isFinite(asNumber)) {
+                        createdTimestamp = asNumber;
+                    } else {
+                        const parsed = Date.parse(createdTimestamp);
+                        return Number.isFinite(parsed) ? parsed : null;
+                    }
+                }
+
+                let createdMs = Number(createdTimestamp);
+                if (createdMs > 0 && createdMs < 1000000000000) {
+                    createdMs *= 1000;
+                }
+                if (!Number.isFinite(createdMs) || createdMs <= 0) return null;
+                return createdMs;
+            }
+
+            function formatAgeFromMs(createdMs) {
+                if (!createdMs) return '--';
+                const diffSec = Math.max(0, Math.floor((Date.now() - createdMs) / 1000));
+                const hours = Math.floor(diffSec / 3600);
+                const minutes = Math.floor((diffSec % 3600) / 60);
+                const seconds = diffSec % 60;
+
+                if (hours > 0) {
+                    return `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+                }
+                if (minutes > 0) {
+                    return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+                }
+                return `${seconds}s`;
+            }
+
+            function formatAge(createdTimestamp) {
+                return formatAgeFromMs(parseCreatedMs(createdTimestamp));
+            }
+
+            function buildTag(label, url) {
+                const safeUrl = String(url || '').trim();
+                if (!safeUrl) return '';
+                let normalized = safeUrl;
+                if (/^@[\w.]+$/i.test(normalized)) {
+                    normalized = `https://x.com/${normalized.slice(1)}`;
+                } else if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(normalized)) {
+                    normalized = `https://${normalized}`;
+                } else if (!/^https?:\/\//i.test(normalized)) {
+                    return '';
+                }
+                const href = escapeHtml(normalized);
+                return `<a class="demo-token-tag" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+            }
+
+            function buildTokenRowHtml(token) {
+                const symbolRaw = String(token?.symbol || 'TICKER').replace(/\s+/g, '');
+                const symbol = escapeHtml(symbolRaw.startsWith('$') ? symbolRaw : `$${symbolRaw}`);
+                const name = escapeHtml(token?.name || 'tokenname');
+                const mint = escapeHtml(token?.mint || '');
+                const mcRaw = Number(token?.usd_market_cap || token?.market_cap || 0);
+                const mcText = mcRaw > 0 ? `$${formatCompactNumber(mcRaw)}` : 'N/A';
+                const volSource = Number(token?.volume_24h || token?.volume || token?.total_volume || 0);
+                const volText = volSource > 0 ? `$${formatCompactNumber(volSource)}` : 'N/A';
+                const iconUrl = token?.image_uri ? escapeHtml(ipfsToHttp(token.image_uri)) : '';
+                const href = mint ? `https://pump.fun/coin/${mint}` : 'https://pump.fun';
+                const createdMs = parseCreatedMs(token?.created_timestamp);
+                const ageText = escapeHtml(formatAgeFromMs(createdMs));
+                const socialTags = [
+                    buildTag('TW', token?.twitter),
+                    buildTag('WEB', token?.website),
+                    buildTag('TG', token?.telegram),
+                    `<a class="demo-token-tag" href="${href}" target="_blank" rel="noopener noreferrer">PUMP</a>`
+                ].filter(Boolean).join('');
+                const copyButton = mint
+                    ? `<button class="demo-token-copy" type="button" data-ca="${mint}" title="Copy CA">${mint.slice(0, 6)}...${mint.slice(-4)}</button>`
+                    : '';
+
+                const mcRawAttr = mcRaw > 0 ? mcRaw : 0;
+                return `
+                    <article class="demo-token-row" ${createdMs ? `data-created-ms="${createdMs}"` : ''} ${mint ? `data-mint="${mint}"` : ''} data-mc-usd="${mcRawAttr}" data-symbol="${symbol}" data-name="${name}" data-image="${iconUrl}">
+                        ${iconUrl
+                            ? `<img class="demo-token-icon" src="${iconUrl}" alt="${symbol} logo" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.outerHTML='<span class=&quot;demo-token-icon&quot;></span>'" />`
+                            : `<span class="demo-token-icon"></span>`
+                        }
+                        <div class="demo-token-meta">
+                            <strong><span class="demo-token-ticker">${symbol}</span><span class="demo-token-name">${name}</span></strong>
+                            ${copyButton}
+                            <span class="demo-token-age" ${createdMs ? `data-created-ms="${createdMs}"` : ''}>age ${ageText}</span>
+                            <span class="demo-token-tags">${socialTags}</span>
+                        </div>
+                        <div class="demo-token-cap"><span class="demo-cap-mc">MC ${mcText}</span><span class="demo-cap-vol">V ${volText}</span></div>
+                        <button class="demo-token-buy" type="button" data-quick-buy-sol="1">1 SOL</button>
+                    </article>
+                `;
+            }
+
+            function ipfsToHttp(uri) {
+                if (!uri || typeof uri !== 'string') return '';
+                const trimmed = uri.trim();
+                if (!trimmed) return '';
+                if (trimmed.startsWith('ipfs://')) {
+                    const cid = trimmed.slice(7).replace(/^ipfs\//, '');
+                    return `https://pump.mypinata.cloud/ipfs/${cid}`;
+                }
+                if (/^https?:\/\/ipfs\.io\/ipfs\//i.test(trimmed)) {
+                    return trimmed.replace(/^https?:\/\/ipfs\.io\/ipfs\//i, 'https://pump.mypinata.cloud/ipfs/');
+                }
+                return trimmed;
+            }
+
+            async function refreshSolPrice() {
+                for (const url of SOL_PRICE_URLS) {
+                    try {
+                        const res = await fetch(url, { cache: 'no-store' });
+                        if (!res.ok) continue;
+                        const j = await res.json();
+                        const price = Number(
+                            j?.solana?.usd
+                            ?? j?.data?.So11111111111111111111111111111111111111112?.price
+                            ?? j?.price
+                        );
+                        if (Number.isFinite(price) && price > 0) {
+                            solPriceUsd = price;
+                            scheduleRender();
+                            return;
+                        }
+                    } catch {
+                        // try next
+                    }
+                }
+            }
+
+            function computeUsdMc(token) {
+                const mcSol = Number(token?.marketCapSol) || 0;
+                return mcSol > 0 ? mcSol * solPriceUsd : 0;
+            }
+
+            function computeUsdVolume(token) {
+                const volSol = Number(token?.volumeSol) || 0;
+                return volSol > 0 ? volSol * solPriceUsd : 0;
+            }
+
+            function pruneTokens() {
+                const nowMs = Date.now();
+                const soonCutoff = nowMs - SOON_MAX_AGE_SECONDS * 1000;
+                const migratedCutoff = nowMs - MIGRATED_MAX_AGE_SECONDS * 1000;
+                for (const [mint, token] of tokenMap) {
+                    if (token.migrated) {
+                        if (token.createdMs < migratedCutoff) {
+                            tokenMap.delete(mint);
+                            unsubscribeTokenTrade(mint);
+                        }
+                        continue;
+                    }
+                    if (token.createdMs < soonCutoff) {
+                        tokenMap.delete(mint);
+                        unsubscribeTokenTrade(mint);
+                    }
+                }
+            }
+
+            function toRenderPayload(token, mcUsd) {
+                return {
+                    mint: token.mint,
+                    symbol: token.symbol,
+                    name: token.name,
+                    image_uri: token.image_uri,
+                    usd_market_cap: mcUsd,
+                    volume_24h: computeUsdVolume(token),
+                    created_timestamp: token.createdMs,
+                    twitter: token.twitter,
+                    website: token.website,
+                    telegram: token.telegram
+                };
+            }
+
+            function getRenderableNewTokens() {
+                const nowMs = Date.now();
+                const out = [];
+                for (const token of tokenMap.values()) {
+                    if (token.migrated) continue;
+                    const ageSec = Math.max(0, Math.floor((nowMs - token.createdMs) / 1000));
+                    if (ageSec > MAX_TOKEN_AGE_SECONDS) continue;
+                    const mcUsd = computeUsdMc(token);
+                    if (Number.isFinite(mcUsd) && mcUsd >= MIN_MC_USD && mcUsd <= MAX_MC_USD) {
+                        token.qualified = true;
+                    }
+                    if (!token.qualified) continue;
+                    if (Number.isFinite(mcUsd) && mcUsd > 0 && mcUsd < DROP_MC_USD) continue;
+                    out.push(toRenderPayload(token, mcUsd));
+                }
+                out.sort((a, b) => b.created_timestamp - a.created_timestamp);
+                return out.slice(0, MAX_VISIBLE_ROWS);
+            }
+
+            function getRenderableSoonTokens() {
+                const out = [];
+                for (const token of tokenMap.values()) {
+                    if (token.migrated) continue;
+                    const mcUsd = computeUsdMc(token);
+                    if (!Number.isFinite(mcUsd) || mcUsd < MIN_SOON_MC_USD) continue;
+                    const volUsd = computeUsdVolume(token);
+                    if (!Number.isFinite(volUsd) || volUsd < MIN_SOON_VOL_USD) continue;
+                    out.push(toRenderPayload(token, mcUsd));
+                }
+                out.sort((a, b) => b.usd_market_cap - a.usd_market_cap);
+                return out.slice(0, MAX_VISIBLE_ROWS);
+            }
+
+            function getRenderableMigratedTokens() {
+                const out = [];
+                for (const token of tokenMap.values()) {
+                    if (!token.migrated) continue;
+                    const migratedAt = Number(token.migratedAtMs) || 0;
+                    if (!migratedAt) continue;
+                    const mcUsd = computeUsdMc(token);
+                    if (!Number.isFinite(mcUsd) || mcUsd < MIN_MIGRATED_MC_USD) continue;
+                    const volH24 = computeUsdVolume(token);
+                    const volH1 = Number(token.volH1Usd) || 0;
+                    const displayVol = volH24 || volH1 || 0;
+                    if (displayVol < MIN_MIGRATED_VOL_USD) continue;
+                    const payload = toRenderPayload(token, mcUsd);
+                    payload.volume_24h = displayVol;
+                    payload.created_timestamp = migratedAt;
+                    payload._migratedAtMs = migratedAt;
+                    out.push(payload);
+                }
+                out.sort((a, b) => b._migratedAtMs - a._migratedAtMs);
+                return out.slice(0, MAX_VISIBLE_ROWS);
+            }
+
+            function emptyRowHtml(message) {
+                return `<article class="demo-token-row is-empty"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong><span class="demo-token-ticker">$LIVE</span><span class="demo-token-name">${escapeHtml(message)}</span></strong><span class="demo-token-age">age --</span></div><div class="demo-token-cap"><span class="demo-cap-mc">MC N/A</span><span class="demo-cap-vol">V N/A</span></div><button class="demo-token-buy" type="button">1 SOL</button></article>`;
+            }
+
+            function renderEmptyState(message) {
+                if (newColumnList) newColumnList.innerHTML = emptyRowHtml(message);
+                if (soonColumnList) soonColumnList.innerHTML = emptyRowHtml(message);
+                if (migratedColumnList) migratedColumnList.innerHTML = emptyRowHtml(message);
+            }
+
+            function renderTokens() {
+                pruneTokens();
+                if (newColumnList) {
+                    const tokens = getRenderableNewTokens();
+                    if (!tokens.length) {
+                        const msg = tokenMap.size === 0
+                            ? 'Waiting for new pump.fun tokens...'
+                            : `Tracking ${tokenMap.size} tokens, none in $${(MIN_MC_USD/1000).toFixed(1)}K-$${(MAX_MC_USD/1000).toFixed(0)}K MC yet`;
+                        newColumnList.innerHTML = emptyRowHtml(msg);
+                    } else {
+                        newColumnList.innerHTML = tokens.map(buildTokenRowHtml).join('');
+                    }
+                }
+                if (soonColumnList) {
+                    const tokens = getRenderableSoonTokens();
+                    if (!tokens.length) {
+                        const msg = tokenMap.size === 0
+                            ? 'Waiting for pump.fun tokens...'
+                            : `No tokens above $${(MIN_SOON_MC_USD/1000).toFixed(0)}K MC / $${(MIN_SOON_VOL_USD/1000).toFixed(0)}K vol yet`;
+                        soonColumnList.innerHTML = emptyRowHtml(msg);
+                    } else {
+                        soonColumnList.innerHTML = tokens.map(buildTokenRowHtml).join('');
+                    }
+                }
+                if (migratedColumnList) {
+                    const tokens = getRenderableMigratedTokens();
+                    if (!tokens.length) {
+                        migratedColumnList.innerHTML = emptyRowHtml(`Waiting for bonded pump.fun tokens ≥ $${(MIN_MIGRATED_MC_USD/1000).toFixed(0)}K MC...`);
+                    } else {
+                        migratedColumnList.innerHTML = tokens.map(buildTokenRowHtml).join('');
+                    }
+                }
+            }
+
+            function scheduleRender() {
+                if (renderScheduled) return;
+                renderScheduled = true;
+                window.requestAnimationFrame(() => {
+                    renderScheduled = false;
+                    renderTokens();
+                });
+            }
+
+            function tickAges() {
+                const lists = [newColumnList, soonColumnList, migratedColumnList].filter(Boolean);
+                let needsRerender = false;
+                lists.forEach((list) => {
+                    const rows = Array.from(list.querySelectorAll('.demo-token-row[data-created-ms]'));
+                    rows.forEach((row) => {
+                        const createdMs = Number(row.getAttribute('data-created-ms'));
+                        if (!Number.isFinite(createdMs) || createdMs <= 0) return;
+                        const ageSec = Math.max(0, Math.floor((Date.now() - createdMs) / 1000));
+                        if (list === newColumnList && ageSec > MAX_TOKEN_AGE_SECONDS) {
+                            needsRerender = true;
+                            return;
+                        }
+                        const ageEl = row.querySelector('.demo-token-age');
+                        if (ageEl) ageEl.textContent = `age ${formatAgeFromMs(createdMs)}`;
+                    });
+                });
+                if (needsRerender) scheduleRender();
+            }
+
+            async function fetchTokenMetadata(mint, uri) {
+                if (!uri || metadataFetched.has(mint)) return;
+                metadataFetched.add(mint);
+                const httpUri = ipfsToHttp(uri);
+                if (!httpUri) return;
+                try {
+                    const res = await fetch(httpUri, { cache: 'no-store' });
+                    if (!res.ok) return;
+                    const meta = await res.json();
+                    const token = tokenMap.get(mint);
+                    if (!token) return;
+                    token.image_uri = ipfsToHttp(meta.image || meta.image_uri || meta.imageUrl || '');
+                    token.twitter = meta.twitter || token.twitter;
+                    token.website = meta.website || token.website;
+                    token.telegram = meta.telegram || token.telegram;
+                    scheduleRender();
+                } catch {
+                    // metadata not critical
+                }
+            }
+
+            function wsSend(payload) {
+                if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+                try {
+                    ws.send(JSON.stringify(payload));
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+
+            function firstSocial(socials, type) {
+                if (!Array.isArray(socials)) return '';
+                const match = socials.find((s) => String(s?.type || '').toLowerCase() === type);
+                return match?.url || '';
+            }
+
+            function ingestDexscreenerPair(p) {
+                if (!p || p.chainId !== 'solana') return false;
+                const mint = p.baseToken?.address;
+                if (!mint) return false;
+                const dexId = String(p.dexId || '').toLowerCase();
+                const onPumpSwap = dexId === 'pumpswap' || dexId.startsWith('pumpswap');
+                const onPumpFun = dexId === 'pumpfun' || dexId === 'pump' || dexId === 'pump-fun';
+                const migrated = onPumpSwap;
+                if (!onPumpFun && !migrated) return false;
+                const createdAt = Number(p.pairCreatedAt) || Date.now();
+                const mcUsd = Number(p.marketCap || p.fdv) || 0;
+                const volUsd = Number(p?.volume?.h24 || p?.volume?.h1 || 0);
+                const volH1Usd = Number(p?.volume?.h1 || 0);
+                const volM5Usd = Number(p?.volume?.m5 || 0);
+                const liquidityUsd = Number(p?.liquidity?.usd) || 0;
+                const marketCapSol = solPriceUsd > 0 && mcUsd > 0 ? mcUsd / solPriceUsd : 0;
+                const volumeSol = solPriceUsd > 0 && volUsd > 0 ? volUsd / solPriceUsd : 0;
+                const info = p.info || {};
+                const existing = tokenMap.get(mint);
+                if (existing) {
+                    if (migrated) {
+                        if (!existing.migrated) existing.migratedAtMs = createdAt || Date.now();
+                        else if (!existing.migratedAtMs) existing.migratedAtMs = createdAt || Date.now();
+                        existing.migrated = true;
+                    }
+                    if (marketCapSol > 0) existing.marketCapSol = marketCapSol;
+                    if (volumeSol > (existing.volumeSol || 0)) existing.volumeSol = volumeSol;
+                    existing.volH1Usd = volH1Usd;
+                    existing.volM5Usd = volM5Usd;
+                    if (liquidityUsd > 0) existing.liquidityUsd = liquidityUsd;
+                    existing.lastDexUpdateMs = Date.now();
+                    if (!existing.image_uri && info.imageUrl) existing.image_uri = info.imageUrl;
+                    if (!existing.twitter) existing.twitter = firstSocial(info.socials, 'twitter') || existing.twitter;
+                    if (!existing.telegram) existing.telegram = firstSocial(info.socials, 'telegram') || existing.telegram;
+                    if (!existing.website && Array.isArray(info.websites)) existing.website = info.websites[0]?.url || existing.website;
+                    if (migrated) unsubscribeTokenTrade(mint);
+                    return true;
+                }
+                tokenMap.set(mint, {
+                    mint,
+                    symbol: String(p.baseToken?.symbol || 'TKN').trim() || 'TKN',
+                    name: String(p.baseToken?.name || 'unnamed').trim() || 'unnamed',
+                    uri: '',
+                    image_uri: info.imageUrl || '',
+                    twitter: firstSocial(info.socials, 'twitter'),
+                    website: Array.isArray(info.websites) ? (info.websites[0]?.url || '') : '',
+                    telegram: firstSocial(info.socials, 'telegram'),
+                    createdMs: createdAt,
+                    marketCapSol,
+                    volumeSol,
+                    volH1Usd,
+                    volM5Usd,
+                    liquidityUsd,
+                    lastDexUpdateMs: Date.now(),
+                    qualified: mcUsd >= MIN_MC_USD && mcUsd <= MAX_MC_USD,
+                    migrated,
+                    migratedAtMs: migrated ? (createdAt || Date.now()) : 0
+                });
+                if (!migrated) subscribeTokenTrade(mint);
+                return true;
+            }
+
+            async function refreshTrackedMigratedFromDex() {
+                const mints = [];
+                for (const token of tokenMap.values()) {
+                    if (token.migrated) mints.push(token.mint);
+                }
+                if (!mints.length) return;
+                for (let i = 0; i < mints.length; i += 30) {
+                    const batch = mints.slice(i, i + 30);
+                    try {
+                        const url = `https://api.dexscreener.com/tokens/v1/solana/${batch.join(',')}`;
+                        const res = await fetch(url, { cache: 'no-store' });
+                        if (!res.ok) continue;
+                        const arr = await res.json();
+                        if (!Array.isArray(arr)) continue;
+                        for (const p of arr) ingestDexscreenerPair(p);
+                    } catch {
+                        // batch failed, continue
+                    }
+                }
+                scheduleRender();
+            }
+
+            function pickPumpswapPool(pools) {
+                if (!Array.isArray(pools) || !pools.length) return null;
+                const pumpswap = pools.find((p) => /pumpswap/i.test(String(p?.market || p?.dex || p?.dexId || '')));
+                if (pumpswap) return pumpswap;
+                const sorted = [...pools].sort((a, b) => {
+                    const ta = toMsTimestamp(a?.createdAt ?? a?.openTime ?? a?.lastUpdated);
+                    const tb = toMsTimestamp(b?.createdAt ?? b?.openTime ?? b?.lastUpdated);
+                    return tb - ta;
+                });
+                return sorted[0] || null;
+            }
+
+            function extractMigrationTimestamp(item, tok, pumpswapPool, poolForData) {
+                const candidates = [
+                    pumpswapPool?.createdAt,
+                    pumpswapPool?.openTime,
+                    pumpswapPool?.pairCreatedAt,
+                    pumpswapPool?.poolCreatedAt,
+                    pumpswapPool?.created_at,
+                    poolForData?.createdAt,
+                    poolForData?.openTime,
+                    poolForData?.pairCreatedAt,
+                    poolForData?.poolCreatedAt,
+                    poolForData?.created_at,
+                    item?.events?.graduated,
+                    item?.graduatedAt,
+                    item?.graduationTime,
+                    item?.bondedAt,
+                    item?.bondedTime,
+                    item?.pumpswap?.createdAt,
+                    item?.pumpswap?.graduatedAt,
+                    tok?.graduatedAt,
+                    tok?.bondedAt,
+                    tok?.createdOn,
+                    tok?.createdAt
+                ];
+                for (const c of candidates) {
+                    const ms = toMsTimestamp(c);
+                    if (ms > 0) return ms;
+                }
+                return 0;
+            }
+
+            function toMsTimestamp(raw) {
+                const n = Number(raw);
+                if (!Number.isFinite(n) || n <= 0) return 0;
+                return n < 1e12 ? n * 1000 : n;
+            }
+
+            function ingestSolanaTrackerToken(item) {
+                if (!item || typeof item !== 'object') return false;
+                const tok = item.token || item;
+                const mint = tok?.mint || tok?.address || item.mint || item.address;
+                if (!mint) return false;
+                const pools = Array.isArray(item.pools) ? item.pools : (Array.isArray(tok.pools) ? tok.pools : []);
+                const pumpswapPool = pickPumpswapPool(pools);
+                const firstPool = pools[0] || {};
+                const poolForData = pumpswapPool || firstPool;
+                const migratedAtMs = extractMigrationTimestamp(item, tok, pumpswapPool, poolForData);
+                if (!migratedAtMs) return false;
+                const mcUsd = Number(
+                    poolForData?.marketCap?.usd
+                    ?? item?.marketCap?.usd
+                    ?? item?.marketCap
+                    ?? 0
+                ) || 0;
+                const marketCapSol = solPriceUsd > 0 && mcUsd > 0 ? mcUsd / solPriceUsd : 0;
+                const volH24Usd = Number(
+                    poolForData?.txns?.volume24h
+                    ?? poolForData?.txns?.volume
+                    ?? poolForData?.volume?.h24
+                    ?? poolForData?.volume?.usd
+                    ?? poolForData?.volume24h
+                    ?? item?.volume?.h24
+                    ?? item?.volume_24h
+                    ?? 0
+                ) || 0;
+                const volH1Usd = Number(
+                    poolForData?.txns?.volume1h
+                    ?? poolForData?.volume?.h1
+                    ?? item?.volume?.h1
+                    ?? 0
+                ) || 0;
+                const volM5Usd = Number(
+                    poolForData?.txns?.volume5m
+                    ?? poolForData?.volume?.m5
+                    ?? item?.volume?.m5
+                    ?? 0
+                ) || 0;
+                const volumeSol = solPriceUsd > 0 && volH24Usd > 0 ? volH24Usd / solPriceUsd : 0;
+                const liquidityUsd = Number(
+                    poolForData?.liquidity?.usd
+                    ?? poolForData?.liquidity
+                    ?? item?.liquidity?.usd
+                    ?? item?.liquidity
+                    ?? 0
+                ) || 0;
+                const existing = tokenMap.get(mint);
+                if (existing) {
+                    existing.migrated = true;
+                    if (!existing.migratedAtMs) existing.migratedAtMs = migratedAtMs;
+                    if (marketCapSol > 0) existing.marketCapSol = marketCapSol;
+                    if (volumeSol > (existing.volumeSol || 0)) existing.volumeSol = volumeSol;
+                    if (volH1Usd > 0) existing.volH1Usd = volH1Usd;
+                    if (volM5Usd > 0) existing.volM5Usd = volM5Usd;
+                    if (liquidityUsd > 0) existing.liquidityUsd = liquidityUsd;
+                    if (!existing.image_uri && (tok.image || tok.image_uri)) existing.image_uri = tok.image || tok.image_uri;
+                    if (!existing.twitter && tok.twitter) existing.twitter = tok.twitter;
+                    if (!existing.website && tok.website) existing.website = tok.website;
+                    if (!existing.telegram && tok.telegram) existing.telegram = tok.telegram;
+                    existing.lastDexUpdateMs = Date.now();
+                    unsubscribeTokenTrade(mint);
+                    return true;
+                }
+                tokenMap.set(mint, {
+                    mint,
+                    symbol: String(tok.symbol || 'TKN').trim() || 'TKN',
+                    name: String(tok.name || 'unnamed').trim() || 'unnamed',
+                    uri: tok.uri || '',
+                    image_uri: tok.image || tok.image_uri || '',
+                    twitter: tok.twitter || '',
+                    website: tok.website || '',
+                    telegram: tok.telegram || '',
+                    createdMs: toMsTimestamp(tok.createdOn || tok.createdAt) || migratedAtMs,
+                    marketCapSol,
+                    volumeSol,
+                    volH1Usd,
+                    volM5Usd,
+                    liquidityUsd,
+                    lastDexUpdateMs: Date.now(),
+                    qualified: false,
+                    migrated: true,
+                    migratedAtMs
+                });
+                return true;
+            }
+
+            let solanaTrackerSampleLogged = false;
+            async function fetchGraduatedFromSolanaTracker() {
+                if (!SOLANA_TRACKER_API_KEY) return;
+                for (const url of SOLANA_TRACKER_GRADUATED_URLS) {
+                    try {
+                        const res = await fetch(url, {
+                            cache: 'no-store',
+                            headers: { 'x-api-key': SOLANA_TRACKER_API_KEY }
+                        });
+                        if (!res.ok) continue;
+                        const data = await res.json();
+                        const list = Array.isArray(data)
+                            ? data
+                            : Array.isArray(data?.data) ? data.data
+                            : Array.isArray(data?.tokens) ? data.tokens
+                            : Array.isArray(data?.results) ? data.results
+                            : [];
+                        if (!list.length) continue;
+                        if (!solanaTrackerSampleLogged) {
+                            solanaTrackerSampleLogged = true;
+                            console.log('[SolanaTracker sample]', url, list[0]);
+                        }
+                        let changed = 0;
+                        for (const item of list) {
+                            if (ingestSolanaTrackerToken(item)) changed++;
+                        }
+                        if (changed) scheduleRender();
+                        return;
+                    } catch {
+                        // try next
+                    }
+                }
+            }
+
+            async function backfillRecentTokens() {
+                const queries = ['pumpfun', 'pump.fun', 'pumpswap', 'pumpswap new', 'new pumpswap'];
+                let changed = 0;
+                for (const q of queries) {
+                    try {
+                        const url = `https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(q)}`;
+                        const res = await fetch(url, { cache: 'no-store' });
+                        if (!res.ok) continue;
+                        const j = await res.json();
+                        const pairs = Array.isArray(j?.pairs) ? j.pairs : [];
+                        for (const p of pairs) {
+                            if (ingestDexscreenerPair(p)) changed++;
+                        }
+                    } catch {
+                        // try next query
+                    }
+                }
+                await refreshTrackedMigratedFromDex();
+                if (changed) scheduleRender();
+            }
+
+            function subscribeTokenTrade(mint) {
+                if (!mint || subscribedMints.has(mint)) return;
+                subscribedMints.add(mint);
+                wsSend({ method: 'subscribeTokenTrade', keys: [mint] });
+            }
+
+            function unsubscribeTokenTrade(mint) {
+                if (!mint || !subscribedMints.has(mint)) return;
+                subscribedMints.delete(mint);
+                wsSend({ method: 'unsubscribeTokenTrade', keys: [mint] });
+            }
+
+            function handleCreateEvent(data) {
+                const mint = String(data.mint || '').trim();
+                if (!mint) return;
+                const now = Date.now();
+                const existing = tokenMap.get(mint);
+                if (existing) {
+                    existing.marketCapSol = Number(data.marketCapSol) || existing.marketCapSol;
+                    scheduleRender();
+                    return;
+                }
+                tokenMap.set(mint, {
+                    mint,
+                    symbol: String(data.symbol || 'TKN').trim() || 'TKN',
+                    name: String(data.name || 'unnamed').trim() || 'unnamed',
+                    uri: data.uri || '',
+                    image_uri: '',
+                    twitter: '',
+                    website: '',
+                    telegram: '',
+                    createdMs: now,
+                    marketCapSol: Number(data.marketCapSol) || 0,
+                    volumeSol: Number(data.solAmount) || 0
+                });
+                subscribeTokenTrade(mint);
+                if (data.uri) fetchTokenMetadata(mint, data.uri);
+                scheduleRender();
+            }
+
+            function handleTradeEvent(data) {
+                const mint = String(data.mint || '').trim();
+                if (!mint) return;
+                const token = tokenMap.get(mint);
+                if (!token) return;
+                const pool = String(data.pool || '').toLowerCase();
+                if (pool.includes('pumpswap')) {
+                    if (!token.migrated) {
+                        token.migrated = true;
+                        token.migratedAtMs = Date.now();
+                        pollFreshMigration(mint, 0);
+                    }
+                    unsubscribeTokenTrade(mint);
+                    scheduleRender();
+                    return;
+                }
+                const mcSol = Number(data.marketCapSol);
+                if (Number.isFinite(mcSol) && mcSol > 0) token.marketCapSol = mcSol;
+                const solAmt = Number(data.solAmount);
+                if (Number.isFinite(solAmt) && solAmt > 0) token.volumeSol = (token.volumeSol || 0) + solAmt;
+                scheduleRender();
+            }
+
+            async function fetchSingleMintFromDex(mint) {
+                try {
+                    const url = `https://api.dexscreener.com/tokens/v1/solana/${mint}`;
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) return false;
+                    const arr = await res.json();
+                    if (!Array.isArray(arr) || !arr.length) return false;
+                    let ingested = false;
+                    for (const p of arr) {
+                        if (ingestDexscreenerPair(p)) ingested = true;
+                    }
+                    scheduleRender();
+                    return ingested;
+                } catch {
+                    return false;
+                }
+            }
+
+            const pendingMigrationPolls = new Set();
+            function pollFreshMigration(mint, attempt = 0) {
+                if (!mint || pendingMigrationPolls.has(`${mint}:${attempt}`)) return;
+                const key = `${mint}:${attempt}`;
+                pendingMigrationPolls.add(key);
+                const delay = attempt === 0 ? 3000 : 10000;
+                window.setTimeout(async () => {
+                    pendingMigrationPolls.delete(key);
+                    const token = tokenMap.get(mint);
+                    if (!token || !token.migrated) return;
+                    const indexed = await fetchSingleMintFromDex(mint);
+                    const refreshed = tokenMap.get(mint);
+                    const haveData = indexed && refreshed && (Number(refreshed.volH1Usd) || 0) > 0;
+                    if (!haveData && attempt < 18) pollFreshMigration(mint, attempt + 1);
+                }, delay);
+            }
+
+            function handleMigrationEvent(data) {
+                const mint = String(data?.mint || '').trim();
+                if (!mint) return;
+                const nowMs = Date.now();
+                let token = tokenMap.get(mint);
+                if (!token) {
+                    tokenMap.set(mint, {
+                        mint,
+                        symbol: 'TKN',
+                        name: 'unnamed',
+                        uri: '',
+                        image_uri: '',
+                        twitter: '',
+                        website: '',
+                        telegram: '',
+                        createdMs: nowMs,
+                        marketCapSol: 0,
+                        volumeSol: 0,
+                        qualified: false,
+                        migrated: true,
+                        migratedAtMs: nowMs
+                    });
+                } else {
+                    if (!token.migrated) token.migratedAtMs = nowMs;
+                    else if (!token.migratedAtMs) token.migratedAtMs = nowMs;
+                    token.migrated = true;
+                }
+                unsubscribeTokenTrade(mint);
+                pollFreshMigration(mint, 0);
+                scheduleRender();
+            }
+
+            function handleWsMessage(raw) {
+                let data;
+                try { data = JSON.parse(raw); } catch { return; }
+                if (!data || typeof data !== 'object') return;
+                if (data.message && !data.txType && !data.mint) return;
+                const txType = data.txType;
+                if (txType === 'create') handleCreateEvent(data);
+                else if (txType === 'buy' || txType === 'sell') handleTradeEvent(data);
+                else if (txType === 'migrate' || txType === 'migration' || data.migrated === true) handleMigrationEvent(data);
+                else if (data.mint && data.pool) {
+                    const pool = String(data.pool).toLowerCase();
+                    if (pool.includes('pumpswap')) {
+                        handleMigrationEvent(data);
+                    }
+                }
+            }
+
+            function connectWebSocket() {
+                try {
+                    ws = new WebSocket(PUMPPORTAL_WS_URL);
+                } catch (err) {
+                    scheduleReconnect();
+                    return;
+                }
+                ws.addEventListener('open', () => {
+                    wsReconnectAttempts = 0;
+                    wsSend({ method: 'subscribeNewToken' });
+                    wsSend({ method: 'subscribeMigration' });
+                    if (subscribedMints.size) {
+                        wsSend({ method: 'subscribeTokenTrade', keys: Array.from(subscribedMints) });
+                    }
+                });
+                ws.addEventListener('message', (evt) => handleWsMessage(evt.data));
+                ws.addEventListener('close', () => scheduleReconnect());
+                ws.addEventListener('error', () => {
+                    try { ws.close(); } catch {}
+                });
+            }
+
+            function scheduleReconnect() {
+                if (wsReconnectTimer) return;
+                const delay = Math.min(30000, 1000 * Math.pow(2, wsReconnectAttempts++));
+                wsReconnectTimer = window.setTimeout(() => {
+                    wsReconnectTimer = null;
+                    connectWebSocket();
+                }, delay);
+            }
+
+            function ensureEnoughRows() {
+                const lists = Array.from(document.querySelectorAll('.demo-token-list'));
+                const minRows = window.matchMedia('(max-width: 900px)').matches ? 8 : 12;
+                lists.forEach((list) => {
+                    const tab = list.closest('.demo-board-column')?.dataset.tab;
+                    if (tab === 'new' || tab === 'soon' || tab === 'migrated') return;
+                    const template = list.querySelector('.demo-token-row');
+                    if (!template) return;
+                    if (template.classList.contains('is-empty')) return;
+                    while (list.children.length < minRows) {
+                        list.appendChild(template.cloneNode(true));
+                    }
+                });
+            }
+
+            function normalizeCapBlocks() {
+                const capBlocks = Array.from(document.querySelectorAll('.demo-token-cap'));
+                capBlocks.forEach((capEl) => {
+                    if (capEl.querySelector('.demo-cap-mc') && capEl.querySelector('.demo-cap-vol')) return;
+                    const raw = String(capEl.textContent || '').replace(/\s+/g, ' ').trim();
+                    if (!raw) return;
+                    const mcMatch = raw.match(/mc\s*([0-9]+k?)/i);
+                    const vMatch = raw.match(/v\s*([0-9]+k?)/i);
+                    const mcText = mcMatch ? `MC ${mcMatch[1].toUpperCase()}` : 'MC 8K';
+                    const vText = vMatch ? `V ${vMatch[1].toUpperCase()}` : 'V 1K';
+                    capEl.innerHTML = `<span class="demo-cap-mc">${mcText}</span><span class="demo-cap-vol">${vText}</span>`;
+                });
+            }
+
+            ensureEnoughRows();
+            normalizeCapBlocks();
+            renderEmptyState('Connecting to live pump.fun feed...');
+            refreshSolPrice().then(() => {
+                backfillRecentTokens();
+                fetchGraduatedFromSolanaTracker();
+            });
+            connectWebSocket();
+            window.setInterval(refreshSolPrice, SOL_PRICE_REFRESH_MS);
+            window.setInterval(backfillRecentTokens, 60 * 1000);
+            window.setInterval(fetchGraduatedFromSolanaTracker, SOLANA_TRACKER_REFRESH_MS);
+            window.setInterval(tickAges, AGE_REFRESH_MS);
+            window.setInterval(scheduleRender, 5000);
+
+            async function copyToClipboard(text) {
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                        return true;
+                    }
+                    const helper = document.createElement('textarea');
+                    helper.value = text;
+                    helper.style.position = 'fixed';
+                    helper.style.opacity = '0';
+                    document.body.appendChild(helper);
+                    helper.focus();
+                    helper.select();
+                    const copied = document.execCommand('copy');
+                    helper.remove();
+                    return copied;
+                } catch {
+                    return false;
+                }
+            }
+
+            const copyHandler = async (event) => {
+                const copyButton = event.target.closest('.demo-token-copy');
+                if (!copyButton) return;
+                const ca = copyButton.getAttribute('data-ca') || '';
+                if (!ca) return;
+                const ok = await copyToClipboard(ca);
+                if (ok) {
+                    const prevText = copyButton.textContent;
+                    copyButton.textContent = 'copied';
+                    window.setTimeout(() => {
+                        copyButton.textContent = prevText;
+                    }, 900);
+                }
+            };
+            newColumnList?.addEventListener('click', copyHandler);
+            soonColumnList?.addEventListener('click', copyHandler);
+            migratedColumnList?.addEventListener('click', copyHandler);
+
+            const searchInput = document.getElementById('token-search-input');
+            const searchResultsEl = document.getElementById('token-search-results');
+            let searchDebounce = null;
+            let searchSeq = 0;
+
+            function isPumpFunToken(item) {
+                const tok = item?.token || item;
+                const mint = tok?.mint || tok?.address || item?.mint;
+                if (!mint) return false;
+                if (/pump$/i.test(mint)) return true;
+                const pools = Array.isArray(item.pools) ? item.pools : [];
+                return pools.some((p) => /pump/i.test(String(p?.market || p?.dex || p?.dexId || '')));
+            }
+
+            function renderSearchResults(list) {
+                if (!searchResultsEl) return;
+                if (!list.length) {
+                    searchResultsEl.innerHTML = '<div class="search-empty">No pump.fun tokens found</div>';
+                    searchResultsEl.hidden = false;
+                    return;
+                }
+                const html = list.slice(0, 15).map((item) => {
+                    const tok = item.token || item;
+                    const mint = String(tok.mint || tok.address || item.mint || '');
+                    const symbol = String(tok.symbol || '?').replace(/\s+/g, '');
+                    const name = tok.name || 'unnamed';
+                    const image = ipfsToHttp(tok.image || tok.image_uri || '');
+                    const pools = Array.isArray(item.pools) ? item.pools : [];
+                    const primary = pools.find((p) => /pumpswap/i.test(String(p?.market || ''))) || pools[0] || {};
+                    const mc = Number(primary.marketCap?.usd || item.marketCap?.usd || 0) || 0;
+                    const shortMint = mint ? `${mint.slice(0, 4)}…${mint.slice(-4)}` : '';
+                    const href = mint ? `demo-trading-terminal.html?chartonly=1#${encodeURIComponent(mint)}` : '#';
+                    return `
+                        <a class="search-result" href="${escapeHtml(href)}" data-mint="${escapeHtml(mint)}" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(name)}" data-image="${escapeHtml(image)}">
+                            ${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.outerHTML='<span class=&quot;no-img&quot;></span>'" />` : '<span class="no-img"></span>'}
+                            <span class="sr-symbol">$${escapeHtml(symbol)}</span>
+                            <span class="sr-name">${escapeHtml(name)}</span>
+                            <span class="sr-mint">${escapeHtml(shortMint)}</span>
+                            <span class="sr-mc">${mc > 0 ? '$' + formatCompactNumber(mc) : '—'}</span>
+                        </a>
+                    `;
+                }).join('');
+                searchResultsEl.innerHTML = html;
+                searchResultsEl.hidden = false;
+            }
+
+            async function runTokenSearch(query) {
+                if (!searchResultsEl) return;
+                if (!SOLANA_TRACKER_API_KEY) {
+                    searchResultsEl.hidden = false;
+                    searchResultsEl.innerHTML = '<div class="search-empty">Configure Solana Tracker key (window.LYKEION_SECRETS.solanaTracker)</div>';
+                    return;
+                }
+                const seq = ++searchSeq;
+                const trimmed = query.trim();
+                if (!trimmed) {
+                    searchResultsEl.hidden = true;
+                    searchResultsEl.innerHTML = '';
+                    return;
+                }
+                searchResultsEl.innerHTML = '<div class="search-empty">Searching...</div>';
+                searchResultsEl.hidden = false;
+                try {
+                    const url = `https://data.solanatracker.io/search?query=${encodeURIComponent(trimmed)}&limit=30&showAllPools=false`;
+                    const res = await fetch(url, {
+                        cache: 'no-store',
+                        headers: { 'x-api-key': SOLANA_TRACKER_API_KEY }
+                    });
+                    if (seq !== searchSeq) return;
+                    if (!res.ok) {
+                        searchResultsEl.innerHTML = '<div class="search-empty">Search failed</div>';
+                        return;
+                    }
+                    const data = await res.json();
+                    const list = Array.isArray(data)
+                        ? data
+                        : Array.isArray(data?.data) ? data.data
+                        : Array.isArray(data?.tokens) ? data.tokens
+                        : Array.isArray(data?.results) ? data.results
+                        : [];
+                    const filtered = list.filter(isPumpFunToken);
+                    if (seq !== searchSeq) return;
+                    renderSearchResults(filtered);
+                } catch {
+                    if (seq !== searchSeq) return;
+                    searchResultsEl.innerHTML = '<div class="search-empty">Search failed</div>';
+                }
+            }
+
+            searchInput?.addEventListener('input', (event) => {
+                if (searchDebounce) window.clearTimeout(searchDebounce);
+                const value = event.target.value;
+                searchDebounce = window.setTimeout(() => runTokenSearch(value), 250);
+            });
+            searchInput?.addEventListener('focus', () => {
+                if (searchResultsEl && searchResultsEl.innerHTML.trim()) searchResultsEl.hidden = false;
+            });
+            // Stash a snapshot so the terminal can show name/symbol/icon immediately on load
+            searchResultsEl?.addEventListener('click', (event) => {
+                const link = event.target.closest('a.search-result');
+                if (!link) return;
+                const mint = link.getAttribute('data-mint') || '';
+                if (!mint) return;
+                try {
+                    sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify({
+                        mint,
+                        symbol: link.getAttribute('data-symbol') || '',
+                        name: link.getAttribute('data-name') || '',
+                        image_uri: link.getAttribute('data-image') || ''
+                    }));
+                } catch {}
+            });
+            document.addEventListener('click', (event) => {
+                if (!searchResultsEl) return;
+                if (event.target.closest('.token-search')) return;
+                searchResultsEl.hidden = true;
+            });
+
+            if (!tabButtons.length || !tabColumns.length) return;
+
+            function setActiveTab(tabName) {
+                tabButtons.forEach((btn) => {
+                    const active = btn.dataset.tabTarget === tabName;
+                    btn.classList.toggle('is-active', active);
+                    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                tabColumns.forEach((col) => {
+                    col.classList.toggle('is-active', col.dataset.tab === tabName);
+                });
+            }
+
+            tabButtons.forEach((btn) => {
+                btn.addEventListener('click', () => setActiveTab(btn.dataset.tabTarget));
+            });
+
+            window.addEventListener('resize', ensureEnoughRows);
+
+            // ===== Virtual trading engine =====
+            const WALLET_KEY = 'lykeion.demoWallet.v1';
+            const WALLET_KEY_LEGACY = 'lyceum.demoWallet.v1';
+            const STARTING_SOL = 5;
+            const MIN_OPEN_POSITION_SOL = 0.0005;
+
+            function loadWallet() {
+                try {
+                    const raw = localStorage.getItem(WALLET_KEY) || localStorage.getItem(WALLET_KEY_LEGACY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed.balanceSol === 'number' && parsed.positions && typeof parsed.positions === 'object') {
+                            return parsed;
+                        }
+                    }
+                } catch {}
+                return { balanceSol: STARTING_SOL, realizedPnlSol: 0, positions: {}, history: [] };
+            }
+            function saveWallet() {
+                try { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); } catch {}
+            }
+            const wallet = loadWallet();
+
+            function getTokenSnapshot(mint) {
+                const t = tokenMap.get(mint);
+                if (t) {
+                    return {
+                        mint,
+                        symbol: t.symbol,
+                        name: t.name,
+                        image_uri: ipfsToHttp(t.image_uri || ''),
+                        mcUsd: computeUsdMc(t),
+                        volUsd: computeUsdVolume(t),
+                        twitter: t.twitter, website: t.website, telegram: t.telegram
+                    };
+                }
+                return null;
+            }
+
+            function computeUnrealizedPnl(pos, currentMcUsd) {
+                if (!pos || !pos.entryMcUsd || pos.entryMcUsd <= 0) return 0;
+                if (!Number.isFinite(currentMcUsd) || currentMcUsd <= 0) return 0;
+                const ratio = currentMcUsd / pos.entryMcUsd;
+                const currentValueSol = pos.investedSol * ratio;
+                return currentValueSol - pos.investedSol;
+            }
+
+            function totalUnrealizedSol() {
+                let total = 0;
+                for (const mint of Object.keys(wallet.positions)) {
+                    const pos = wallet.positions[mint];
+                    const t = tokenMap.get(mint);
+                    const currentMcUsd = t ? computeUsdMc(t) : pos.lastMcUsd || pos.entryMcUsd;
+                    if (t) pos.lastMcUsd = currentMcUsd;
+                    total += computeUnrealizedPnl(pos, currentMcUsd);
+                }
+                return total;
+            }
+
+            const WALLET_PNL_7D_MS = 7 * 24 * 60 * 60 * 1000;
+            /** Realized PnL from sells in the last 7 days, plus buy/sell SOL volume in that window (for the share card). */
+            function computeWalletPnl7d() {
+                const cutoff = Date.now() - WALLET_PNL_7D_MS;
+                let realized7d = 0;
+                let buyVol7d = 0;
+                let sellProceeds7d = 0;
+                for (const h of wallet.history || []) {
+                    const t = Number(h.at) || 0;
+                    if (t < cutoff) continue;
+                    if (h.kind === 'buy') buyVol7d += Number(h.sol) || 0;
+                    if (h.kind === 'sell') {
+                        sellProceeds7d += Number(h.sol) || 0;
+                        if (Number.isFinite(h.pnlSol)) realized7d += h.pnlSol;
+                    }
+                }
+                const pct = buyVol7d > 0 ? (realized7d / buyVol7d) * 100 : 0;
+                return { realized7d, buyVol7d, sellProceeds7d, pct };
+            }
+
+            function fmtSol(n) {
+                const v = Number(n) || 0;
+                const sign = v >= 0 ? '+' : '';
+                return `${sign}${v.toFixed(3)}`;
+            }
+            function fmtSolPlain(n) {
+                return `${(Number(n) || 0).toFixed(3)} SOL`;
+            }
+            const PNL_HANDLE_KEY = 'lykeion.pnlHandle';
+            const PNL_HANDLE_MAX = 10;
+            function normalizePnlHandleInput(value) {
+                return String(value || '')
+                    .trim()
+                    .replace(/^@+/g, '')
+                    .slice(0, PNL_HANDLE_MAX);
+            }
+            function getPnlCardDisplayName() {
+                const raw = localStorage.getItem(PNL_HANDLE_KEY);
+                const h = normalizePnlHandleInput(raw);
+                return h ? '@' + h : '';
+            }
+            function ensurePnlHandleSet() {
+                const raw = localStorage.getItem(PNL_HANDLE_KEY);
+                if (raw !== null && normalizePnlHandleInput(raw) !== '') return Promise.resolve(true);
+                return new Promise((resolve) => {
+                    document.getElementById('pnl-handle-setup-modal')?.remove();
+                    const modal = document.createElement('div');
+                    modal.id = 'pnl-handle-setup-modal';
+                    modal.className = 'pnl-card-modal pnl-handle-setup-modal';
+                    modal.innerHTML = ''
+                        + '<div class="pnl-card-backdrop"></div>'
+                        + '<div class="pnl-card-dialog pnl-handle-dialog" role="dialog" aria-modal="true" aria-labelledby="pnl-handle-title">'
+                        +   '<h2 class="pnl-handle-title" id="pnl-handle-title">What should we call you?</h2>'
+                        +   '<p class="pnl-handle-hint">Pick a nickname for your cards. Max ' + PNL_HANDLE_MAX + ' characters.</p>'
+                        +   '<input type="text" class="pnl-handle-input" maxlength="' + PNL_HANDLE_MAX + '" autocomplete="nickname" spellcheck="false" placeholder="e.g. bobo12" />'
+                        +   '<div class="pnl-handle-actions">'
+                        +     '<button type="button" class="pnl-card-btn" data-pnl-handle-cancel>Cancel</button>'
+                        +     '<button type="button" class="pnl-card-btn is-primary" data-pnl-handle-save disabled>Continue</button>'
+                        +   '</div>'
+                        + '</div>';
+                    document.body.appendChild(modal);
+                    const input = modal.querySelector('.pnl-handle-input');
+                    const saveBtn = modal.querySelector('[data-pnl-handle-save]');
+                    const finish = (ok) => {
+                        modal.remove();
+                        resolve(ok);
+                    };
+                    const syncSave = () => {
+                        saveBtn.disabled = normalizePnlHandleInput(input.value) === '';
+                    };
+                    input.addEventListener('input', syncSave);
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !saveBtn.disabled) saveBtn.click();
+                    });
+                    modal.querySelector('[data-pnl-handle-cancel]').addEventListener('click', () => finish(false));
+                    modal.querySelector('.pnl-card-backdrop').addEventListener('click', () => finish(false));
+                    saveBtn.addEventListener('click', () => {
+                        const v = normalizePnlHandleInput(input.value);
+                        if (!v) return;
+                        try { localStorage.setItem(PNL_HANDLE_KEY, v); } catch (e) {}
+                        finish(true);
+                    });
+                    (typeof queueMicrotask === 'function' ? queueMicrotask : (fn) => setTimeout(fn, 0))(() => {
+                        input.focus();
+                        syncSave();
+                    });
+                });
+            }
+
+            const whBalEl = document.getElementById('wh-bal');
+
+            function renderWalletHud() {
+                if (whBalEl) whBalEl.textContent = fmtSolPlain(wallet.balanceSol);
+                renderRowPositionMarkers();
+                if (!positionsPanel.hidden) renderDemoPortfolio();
+            }
+
+            // Cache of DexScreener snapshots keyed by mint — used for positions/trades not in tokenMap
+            const dexMintCache = new Map();
+            async function fetchDexMintData(mints) {
+                const missing = mints.filter((m) => m && !dexMintCache.has(m));
+                if (!missing.length) return;
+                try {
+                    // DexScreener accepts comma-separated mints, up to 30 per call
+                    const chunks = [];
+                    for (let i = 0; i < missing.length; i += 30) chunks.push(missing.slice(i, i + 30));
+                    for (const chunk of chunks) {
+                        const url = 'https://api.dexscreener.com/latest/dex/tokens/' + chunk.join(',');
+                        const res = await fetch(url, { cache: 'no-store', headers: { accept: 'application/json' } });
+                        if (!res.ok) continue;
+                        const body = await res.json();
+                        const pairs = Array.isArray(body?.pairs) ? body.pairs : [];
+                        chunk.forEach((mint) => {
+                            const hit = pairs
+                                .filter((p) => String(p?.baseToken?.address || '').toLowerCase() === mint.toLowerCase())
+                                .sort((a, b) => (Number(b?.liquidity?.usd) || 0) - (Number(a?.liquidity?.usd) || 0))[0];
+                            if (hit) {
+                                dexMintCache.set(mint, {
+                                    symbol: hit?.baseToken?.symbol || '',
+                                    name: hit?.baseToken?.name || '',
+                                    mcUsd: Number(hit?.marketCap || hit?.fdv) || 0,
+                                    image: hit?.info?.imageUrl || '',
+                                });
+                            } else {
+                                dexMintCache.set(mint, null);
+                            }
+                        });
+                    }
+                } catch {}
+            }
+
+            function pruneDustPositions() {
+                let changed = false;
+                for (const m of [...Object.keys(wallet.positions)]) {
+                    const p = wallet.positions[m];
+                    if (!p || Number(p.investedSol) < MIN_OPEN_POSITION_SOL) {
+                        delete wallet.positions[m];
+                        changed = true;
+                    }
+                }
+                if (changed) saveWallet();
+            }
+
+            function renderDemoPortfolio() {
+                pruneDustPositions();
+                const unreal = totalUnrealizedSol();
+                const pnlTotal = wallet.realizedPnlSol + unreal;
+                const balUsdEl = document.getElementById('portfolio-bal-usd');
+                const balEl = document.getElementById('portfolio-bal-summary');
+                const pnlEl = document.getElementById('portfolio-pnl-summary');
+                const bal = Number(wallet.balanceSol) || 0;
+                const spot = Number(solPriceUsd) > 0 ? solPriceUsd : 0;
+                const usd = spot > 0 ? bal * spot : 0;
+                if (balUsdEl) {
+                    balUsdEl.textContent = usd > 0
+                        ? ('$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+                        : '—';
+                }
+                if (balEl) balEl.textContent = bal.toFixed(6) + ' SOL';
+                if (pnlEl) {
+                    pnlEl.textContent = fmtSol(pnlTotal) + ' SOL';
+                    pnlEl.classList.toggle('is-pos', pnlTotal > 0);
+                    pnlEl.classList.toggle('is-neg', pnlTotal < 0);
+                }
+                // Hit rate: % of closed sells that realized positive PnL
+                const closedSells = (wallet.history || []).filter((h) => h.kind === 'sell' && Number.isFinite(h.pnlSol));
+                const wins = closedSells.filter((h) => h.pnlSol > 0).length;
+                const total = closedSells.length;
+                const hitRate = total > 0 ? (wins / total) * 100 : 0;
+                const hitEl = document.getElementById('portfolio-hitrate-summary');
+                if (hitEl) {
+                    hitEl.textContent = total > 0 ? (hitRate.toFixed(0) + '% (' + wins + '/' + total + ')') : '—';
+                    hitEl.classList.toggle('is-pos', hitRate >= 50 && total > 0);
+                    hitEl.classList.toggle('is-neg', hitRate < 50 && total > 0);
+                }
+                const p7d = computeWalletPnl7d();
+                const pnl7dEl = document.getElementById('portfolio-pnl-7d-summary');
+                if (pnl7dEl) {
+                    pnl7dEl.textContent = fmtSol(p7d.realized7d) + ' SOL';
+                    pnl7dEl.classList.toggle('is-pos', p7d.realized7d > 0);
+                    pnl7dEl.classList.toggle('is-neg', p7d.realized7d < 0);
+                }
+                renderPositionsList();
+                renderPortfolioHistory();
+
+                // Prefetch DexScreener data for any mints we don't already know
+                const needed = new Set();
+                Object.keys(wallet.positions).forEach((m) => { if (!tokenMap.has(m)) needed.add(m); });
+                (wallet.history || []).forEach((h) => { if (h.mint && !tokenMap.has(h.mint)) needed.add(h.mint); });
+                if (needed.size) {
+                    fetchDexMintData([...needed]).then(() => {
+                        if (!positionsPanel.hidden) {
+                            renderPositionsList();
+                            renderPortfolioHistory();
+                        }
+                    });
+                }
+            }
+
+            let pnlCardImage = null;
+            let pnlCardFontsPromise = null;
+            function loadPnlCardFonts() {
+                if (!pnlCardFontsPromise) {
+                    pnlCardFontsPromise = (async () => {
+                        try {
+                            await document.fonts.load("185px 'NCLNeovibes Demo'");
+                        } catch (e) {
+                            console.warn('[pnl-card] NCLNeovibes font load', e);
+                        }
+                    })();
+                }
+                return pnlCardFontsPromise;
+            }
+            function loadPnlCardTemplate() {
+                if (pnlCardImage) return loadPnlCardFonts().then(() => pnlCardImage);
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = async () => {
+                        pnlCardImage = img;
+                        await loadPnlCardFonts();
+                        resolve(img);
+                    };
+                    img.onerror = reject;
+                    img.src = '../assets/images/lykeuipnlcard.png';
+                });
+            }
+            function getMcUsdForMintForCard(mint) {
+                const t = tokenMap.get(mint);
+                if (t) return computeUsdMc(t);
+                const dex = dexMintCache.get(mint);
+                const p = wallet.positions[mint];
+                return Number(dex?.mcUsd) || Number(p?.lastMcUsd) || 0;
+            }
+            function tickerForPnlCard(mint) {
+                const p = wallet.positions[mint];
+                const dex = dexMintCache.get(mint);
+                return String(p?.symbol || dex?.symbol || 'TKN').replace(/^\$?/, '');
+            }
+            async function buildPnlCardCanvas(targetMint) {
+                const mint = targetMint;
+                if (!mint) return null;
+                const pos = wallet.positions[mint];
+                const hist = (wallet.history || []).filter((h) => h.mint === mint);
+                const investedTotal = hist.filter((h) => h.kind === 'buy').reduce((s, h) => s + (Number(h.sol) || 0), 0);
+                const realized = hist.filter((h) => h.kind === 'sell').reduce((s, h) => s + (Number(h.pnlSol) || 0), 0);
+                let holding = 0;
+                let unreal = 0;
+                if (pos && pos.entryMcUsd > 0) {
+                    const mc = getMcUsdForMintForCard(mint);
+                    const ratio = mc > 0 ? mc / pos.entryMcUsd : 1;
+                    holding = pos.investedSol * ratio;
+                    unreal = holding - pos.investedSol;
+                }
+                const pnl = realized + unreal;
+                const pct = investedTotal > 0 ? (pnl / investedTotal) * 100 : 0;
+                const ticker = tickerForPnlCard(mint);
+                const img = pnlCardImage;
+                const W = img.naturalWidth;
+                const H = img.naturalHeight;
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'left';
+                ctx.font = '700 130px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText(String(ticker).toUpperCase(), W * 0.048 + 52, H * 0.395);
+                const pnlSolStr = (pnl >= 0 ? '+' : '') + pnl.toFixed(3);
+                const pnlSolX = W * 0.22 - 90;
+                const pnlSolY = H * 0.58 - 44;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 185px "NCLNeovibes Demo", "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText(pnlSolStr, pnlSolX, pnlSolY);
+                const statsY = H * 0.796 + 170;
+                const investedX = Math.max(16, W * 0.40 - 666);
+                const holdX = Math.max(16, W * 0.58 - 640);
+                const pctX = Math.max(80, W * 0.955 - 840);
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(investedTotal.toFixed(2) + ' SOL', investedX, statsY);
+                ctx.fillText(holding.toFixed(2) + ' SOL', holdX, statsY);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText((pct >= 0 ? '+' : '') + pct.toFixed(1) + '%', pctX, statsY);
+                const uname = getPnlCardDisplayName();
+                ctx.font = '500 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                if (uname) ctx.fillText(uname, W * 0.955, statsY);
+                return canvas;
+            }
+
+            async function buildWallet7dPnlCardCanvas() {
+                const { realized7d, buyVol7d, pct } = computeWalletPnl7d();
+                const unrealOpen = totalUnrealizedSol();
+                const img = pnlCardImage;
+                if (!img) return null;
+                const W = img.naturalWidth;
+                const H = img.naturalHeight;
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'left';
+                ctx.font = '700 130px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText('7 DAY', W * 0.048 + 52, H * 0.395);
+                const pnlSolStr = (realized7d >= 0 ? '+' : '') + realized7d.toFixed(3);
+                const pnlSolX = W * 0.22 - 90;
+                const pnlSolY = H * 0.58 - 44;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 185px "NCLNeovibes Demo", "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText(pnlSolStr, pnlSolX, pnlSolY);
+                const statsY = H * 0.796 + 170;
+                const investedX = Math.max(16, W * 0.40 - 666);
+                const holdX = Math.max(16, W * 0.58 - 640);
+                const pctX = Math.max(80, W * 0.955 - 840);
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(buyVol7d.toFixed(2) + ' SOL', investedX, statsY);
+                ctx.fillText(unrealOpen.toFixed(2) + ' SOL', holdX, statsY);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText((pct >= 0 ? '+' : '') + pct.toFixed(1) + '%', pctX, statsY);
+                const uname = getPnlCardDisplayName();
+                ctx.font = '500 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                if (uname) ctx.fillText(uname, W * 0.955, statsY);
+                return canvas;
+            }
+            function showPnlCardModal(canvas, downloadSlug) {
+                document.getElementById('pnl-card-modal')?.remove();
+                const modal = document.createElement('div');
+                modal.id = 'pnl-card-modal';
+                modal.className = 'pnl-card-modal';
+                modal.innerHTML = ''
+                    + '<div class="pnl-card-backdrop"></div>'
+                    + '<div class="pnl-card-dialog">'
+                    +   '<button type="button" class="pnl-card-close" aria-label="Close">×</button>'
+                    +   '<div class="pnl-card-preview"></div>'
+                    +   '<div class="pnl-card-actions">'
+                    +     '<button type="button" class="pnl-card-btn is-primary" data-action="download">Download</button>'
+                    +     '<button type="button" class="pnl-card-btn" data-action="copy">Copy image</button>'
+                    +   '</div>'
+                    + '</div>';
+                const preview = modal.querySelector('.pnl-card-preview');
+                canvas.style.maxWidth = '100%';
+                canvas.style.height = 'auto';
+                canvas.style.borderRadius = '10px';
+                canvas.style.display = 'block';
+                preview.appendChild(canvas);
+                document.body.appendChild(modal);
+                const close = () => modal.remove();
+                modal.querySelector('.pnl-card-close').addEventListener('click', close);
+                modal.querySelector('.pnl-card-backdrop').addEventListener('click', close);
+                modal.querySelector('[data-action="download"]').addEventListener('click', () => {
+                    canvas.toBlob((blob) => {
+                        if (!blob) return;
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        const sym = String(downloadSlug || 'token').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                        a.href = url;
+                        a.download = 'lykeion-pnl-' + sym + '.png';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 2000);
+                        toast('PnL card downloaded', 'is-pos');
+                    }, 'image/png');
+                });
+                modal.querySelector('[data-action="copy"]').addEventListener('click', async () => {
+                    try {
+                        const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+                        if (!blob) throw new Error('blob failed');
+                        if (navigator.clipboard && window.ClipboardItem) {
+                            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                            toast('Image copied to clipboard', 'is-pos');
+                        } else {
+                            toast('Clipboard images not supported in this browser', 'is-err');
+                        }
+                    } catch (err) {
+                        console.warn('[pnl-card] copy failed', err);
+                        toast('Copy failed — use Download', 'is-err');
+                    }
+                });
+            }
+
+            function renderPortfolioHistory() {
+                const el = document.getElementById('portfolio-history-list');
+                if (!el) return;
+                // Top 5 closed trades — sells only, sorted by PnL (best first)
+                const sells = (wallet.history || [])
+                    .filter((h) => h.kind === 'sell' && Number.isFinite(h.pnlSol))
+                    .sort((a, b) => (b.pnlSol || 0) - (a.pnlSol || 0))
+                    .slice(0, 5);
+                if (!sells.length) {
+                    el.innerHTML = '<div class="term-tx-empty" style="padding:12px;">No closed trades yet</div>';
+                    return;
+                }
+                el.innerHTML = sells.map((h) => {
+                    const pos = wallet.positions[h.mint];
+                    const dex = dexMintCache.get(h.mint);
+                    let sym = pos?.symbol || dex?.symbol || '';
+                    if (sym) sym = '$' + String(sym).replace(/^\$/, '');
+                    if (!sym && h.mint) {
+                        const m = String(h.mint);
+                        sym = m.length > 12 ? m.slice(0, 4) + '…' + m.slice(-4) : m;
+                    }
+                    if (!sym) sym = '—';
+                    const pnl = Number(h.pnlSol) || 0;
+                    const pnlCls = pnl >= 0 ? 'is-pos' : 'is-neg';
+                    const pnlStr = (pnl >= 0 ? '+' : '') + pnl.toFixed(3) + ' SOL';
+                    const mc = Number(h.mcUsd) || 0;
+                    const detail = (Number(h.sol) || 0).toFixed(3) + ' SOL'
+                        + (mc > 0 ? ' · MC $' + formatCompactNumber(mc) : '');
+                    return ''
+                        + '<div class="portfolio-hist-row">'
+                        + '<span class="ph-main"><strong>' + escapeHtml(sym) + '</strong> '
+                        + '<span class="ph-pnl ' + pnlCls + '">' + escapeHtml(pnlStr) + '</span><br>'
+                        + '<span style="opacity:0.55;font-size:11px;">' + escapeHtml(detail) + '</span></span>'
+                        + '<div class="ph-right">'
+                        + '<button type="button" class="portfolio-hist-pnl-card" data-pnl-card-mint="' + escapeHtml(h.mint) + '" title="Open PnL card">PnL card</button>'
+                        + '<span class="ph-age">' + formatAge(h.at) + '</span>'
+                        + '</div>'
+                        + '</div>';
+                }).join('');
+            }
+
+            document.getElementById('portfolio-history-list')?.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-pnl-card-mint]');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const mint = btn.getAttribute('data-pnl-card-mint');
+                if (!mint) return;
+                try {
+                    if (!(await ensurePnlHandleSet())) return;
+                    await loadPnlCardTemplate();
+                    const canvas = await buildPnlCardCanvas(mint);
+                    if (!canvas) return;
+                    const slug = tickerForPnlCard(mint).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    showPnlCardModal(canvas, slug);
+                } catch (err) {
+                    console.warn('[pnl-card] failed', err);
+                    toast('Could not load PnL template', 'is-err');
+                }
+            });
+
+            function tokenPnlSol(mint) {
+                const pos = wallet.positions[mint];
+                const realized = (wallet.history || [])
+                    .filter((h) => h.mint === mint && h.kind === 'sell' && typeof h.pnlSol === 'number')
+                    .reduce((s, h) => s + h.pnlSol, 0);
+                if (!pos) return realized;
+                const t = tokenMap.get(mint);
+                const mc = t ? computeUsdMc(t) : pos.lastMcUsd || pos.entryMcUsd;
+                return realized + computeUnrealizedPnl(pos, mc);
+            }
+
+            function renderRowPositionMarkers() {
+                document.querySelectorAll('.demo-token-row[data-mint]').forEach((row) => {
+                    const mint = row.getAttribute('data-mint');
+                    row.classList.toggle('has-position', !!wallet.positions[mint]);
+                });
+            }
+
+            const toastStack = document.getElementById('toast-stack');
+            function toast(message, type = '') {
+                if (!toastStack) return;
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.textContent = message;
+                toastStack.appendChild(el);
+                window.setTimeout(() => {
+                    el.style.opacity = '0';
+                    el.style.transition = 'opacity 200ms ease';
+                    window.setTimeout(() => el.remove(), 220);
+                }, 2800);
+            }
+
+            function executeBuy(mint, amountSol, mcUsdAtClick, snapshot) {
+                if (!mint || !(amountSol > 0)) return false;
+                if (amountSol > wallet.balanceSol + 1e-9) {
+                    toast(`Insufficient balance (${fmtSolPlain(wallet.balanceSol)})`, 'is-err');
+                    return false;
+                }
+                if (!(mcUsdAtClick > 0)) {
+                    toast('No market cap available — can\'t price entry', 'is-err');
+                    return false;
+                }
+                const existing = wallet.positions[mint];
+                const snap = snapshot || getTokenSnapshot(mint) || {};
+                if (existing) {
+                    const totalInvested = existing.investedSol + amountSol;
+                    const newRatio = totalInvested / ((existing.investedSol / existing.entryMcUsd) + (amountSol / mcUsdAtClick));
+                    existing.entryMcUsd = newRatio;
+                    existing.investedSol = totalInvested;
+                    existing.lastMcUsd = mcUsdAtClick;
+                    existing.symbol = snap.symbol || existing.symbol;
+                    existing.name = snap.name || existing.name;
+                    existing.image_uri = snap.image_uri || existing.image_uri;
+                } else {
+                    wallet.positions[mint] = {
+                        mint,
+                        symbol: snap.symbol || 'TKN',
+                        name: snap.name || 'unnamed',
+                        image_uri: snap.image_uri || '',
+                        entryMcUsd: mcUsdAtClick,
+                        investedSol: amountSol,
+                        lastMcUsd: mcUsdAtClick,
+                        openedAt: Date.now()
+                    };
+                }
+                wallet.balanceSol -= amountSol;
+                const nowMs = Date.now();
+                wallet.history.unshift({ kind: 'buy', mint, sol: amountSol, mcUsd: mcUsdAtClick, at: nowMs });
+                if (wallet.history.length > 100) wallet.history.length = 100;
+                saveWallet();
+                renderWalletHud();
+                toast(`Bought ${(snap.symbol || 'token').replace(/^\$?/, '$')} for ${amountSol.toFixed(3)} SOL @ MC $${formatCompactNumber(mcUsdAtClick)}`, 'is-pos');
+                return true;
+            }
+
+            function executeSell(mint, fractionOfPosition, currentMcUsd) {
+                const pos = wallet.positions[mint];
+                if (!pos) { toast('No position to sell', 'is-err'); return false; }
+                if (!(currentMcUsd > 0)) { toast('No live MC — can\'t close', 'is-err'); return false; }
+                const f = Math.max(0, Math.min(1, Number(fractionOfPosition) || 0));
+                if (f <= 0) return false;
+                const sellInvested = pos.investedSol * f;
+                const ratio = currentMcUsd / pos.entryMcUsd;
+                const proceedsSol = sellInvested * ratio;
+                const realized = proceedsSol - sellInvested;
+                wallet.balanceSol += proceedsSol;
+                wallet.realizedPnlSol += realized;
+                pos.investedSol -= sellInvested;
+                pos.lastMcUsd = currentMcUsd;
+                const nowMs = Date.now();
+                wallet.history.unshift({ kind: 'sell', mint, sol: proceedsSol, pnlSol: realized, mcUsd: currentMcUsd, at: nowMs });
+                if (wallet.history.length > 100) wallet.history.length = 100;
+                if (pos.investedSol < MIN_OPEN_POSITION_SOL) delete wallet.positions[mint];
+                saveWallet();
+                renderWalletHud();
+                const msg = `Sold ${(pos.symbol || 'token').replace(/^\$?/, '$')} → ${proceedsSol.toFixed(3)} SOL (PnL ${fmtSol(realized)})`;
+                toast(msg, realized >= 0 ? 'is-pos' : 'is-neg');
+                return true;
+            }
+
+            // ===== Quick-buy & open terminal =====
+            function readSnapshotFromRow(row) {
+                return {
+                    mint: row.getAttribute('data-mint') || '',
+                    symbol: row.getAttribute('data-symbol') || '',
+                    name: row.getAttribute('data-name') || '',
+                    image_uri: row.getAttribute('data-image') || '',
+                    mcUsd: Number(row.getAttribute('data-mc-usd')) || 0
+                };
+            }
+
+            function handleColumnClick(event) {
+                const copyBtn = event.target.closest('.demo-token-copy');
+                if (copyBtn) return;
+                const tag = event.target.closest('.demo-token-tag');
+                if (tag) return;
+                const buyBtn = event.target.closest('.demo-token-buy');
+                const row = event.target.closest('.demo-token-row');
+                if (!row || row.classList.contains('is-empty')) return;
+                const snap = readSnapshotFromRow(row);
+                if (!snap.mint) return;
+                if (buyBtn) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const amount = Number(buyBtn.getAttribute('data-quick-buy-sol')) || 1;
+                    executeBuy(snap.mint, amount, snap.mcUsd, snap);
+                    return;
+                }
+                try { sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify(snap)); } catch {}
+                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(snap.mint);
+            }
+            newColumnList?.addEventListener('click', handleColumnClick);
+            soonColumnList?.addEventListener('click', handleColumnClick);
+            migratedColumnList?.addEventListener('click', handleColumnClick);
+
+            // Live wallet HUD refresh so PnL updates as MC streams in.
+            window.setInterval(() => { renderWalletHud(); }, 1500);
+
+            // ===== Demo portfolio modal =====
+            const positionsPanel = document.getElementById('positions-panel');
+            const positionsListEl = document.getElementById('positions-list');
+            const whPositionsBtn = document.getElementById('wh-positions-btn');
+            function closePortfolioPanel() {
+                if (positionsPanel) positionsPanel.hidden = true;
+                whPositionsBtn?.setAttribute('aria-expanded', 'false');
+            }
+            whPositionsBtn?.addEventListener('click', () => {
+                if (!positionsPanel) return;
+                positionsPanel.hidden = !positionsPanel.hidden;
+                whPositionsBtn.setAttribute('aria-expanded', positionsPanel.hidden ? 'false' : 'true');
+                if (!positionsPanel.hidden) renderDemoPortfolio();
+            });
+            document.getElementById('positions-close')?.addEventListener('click', closePortfolioPanel);
+            document.getElementById('portfolio-modal-backdrop')?.addEventListener('click', closePortfolioPanel);
+
+            document.getElementById('portfolio-share-7d-btn')?.addEventListener('click', async () => {
+                try {
+                    if (!(await ensurePnlHandleSet())) return;
+                    await loadPnlCardTemplate();
+                    const canvas = await buildWallet7dPnlCardCanvas();
+                    if (!canvas) return;
+                    showPnlCardModal(canvas, 'wallet-7d-pnl');
+                } catch (err) {
+                    console.warn('[pnl-card] 7d wallet card failed', err);
+                    toast('Could not load PnL template', 'is-err');
+                }
+            });
+
+            function renderPositionsList() {
+                if (!positionsListEl) return;
+                const mints = Object.keys(wallet.positions).filter((m) => {
+                    const p = wallet.positions[m];
+                    return p && Number(p.investedSol) >= MIN_OPEN_POSITION_SOL;
+                });
+                if (!mints.length) { positionsListEl.innerHTML = '<div class="term-tx-empty" style="padding:14px;">No open positions</div>'; return; }
+                positionsListEl.innerHTML = mints.map((mint) => {
+                    const pos = wallet.positions[mint];
+                    const t = tokenMap.get(mint);
+                    const dex = dexMintCache.get(mint);
+                    if (dex?.symbol && !pos.symbol) pos.symbol = dex.symbol;
+                    if (dex?.name && !pos.name) pos.name = dex.name;
+                    const liveMc = t ? computeUsdMc(t) : 0;
+                    const dexMc = Number(dex?.mcUsd) || 0;
+                    const lastMc = Number(pos.lastMcUsd) || 0;
+                    const mc = liveMc > 0 ? liveMc : (dexMc > 0 ? dexMc : lastMc);
+                    const entry = Number(pos.entryMcUsd) || 0;
+                    const ratio = mc > 0 && entry > 0 ? mc / entry : 1;
+                    const unreal = pos.investedSol * (ratio - 1);
+                    const pct = (ratio - 1) * 100;
+                    const cls = unreal >= 0 ? 'is-pos' : 'is-neg';
+                    const sym = (pos.symbol || 'TKN').replace(/^\$?/, '$');
+                    return `
+                        <div class="position-item" data-open-mint="${escapeHtml(mint)}">
+                            <span class="pi-sym">${escapeHtml(sym)}</span>
+                            <span class="pi-pnl ${cls}">${fmtSol(unreal)} (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)</span>
+                            <span class="pi-meta">${pos.investedSol.toFixed(3)} SOL · entry ${entry > 0 ? '$' + formatCompactNumber(entry) : '—'} · now ${mc > 0 ? '$' + formatCompactNumber(mc) : '—'}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            positionsListEl?.addEventListener('click', (e) => {
+                const item = e.target.closest('[data-open-mint]');
+                if (!item) return;
+                const mint = item.getAttribute('data-open-mint');
+                positionsPanel.hidden = true;
+                if (wallet.positions[mint]) {
+                    try {
+                        sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify({
+                            mint,
+                            symbol: wallet.positions[mint].symbol,
+                            name: wallet.positions[mint].name,
+                            image_uri: wallet.positions[mint].image_uri
+                        }));
+                    } catch {}
+                }
+                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(mint);
+            });
+
+            document.getElementById('wh-reset-btn')?.addEventListener('click', () => {
+                if (!confirm('Reset virtual wallet to 5 SOL? This clears all positions and history.')) return;
+                wallet.balanceSol = STARTING_SOL;
+                wallet.realizedPnlSol = 0;
+                wallet.positions = {};
+                wallet.history = [];
+                saveWallet();
+                renderWalletHud();
+                toast('Wallet reset to 5 SOL', 'is-pos');
+            });
+
+            pruneDustPositions();
+            renderWalletHud();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn to trade Solana memecoins with lessons, practice tools, and an AI trading assistant." />
+  <title>Lykeion - Course</title>
+  <link rel="icon" type="image/png" href="../assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="../assets/icons/favicon.png" />
+  <link rel="stylesheet" href="../styles/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../scripts/firebase-config.js"></script>
+  <script src="../scripts/firestore-utils.js"></script>
+</head>
+<body class="page-course">
+  <div class="cursor-glow"></div>
+  <div class="background-pattern"></div>
+
+  <nav class="navbar">
+    <a href="dashboard.html"><img src="../assets/icons/icons8-x-50.png" alt="Close" class="x-icon" /></a>
+    <span class="nav-logo">Lykeion</span>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle sidebar">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <main class="course-main">
+    <div class="course-layout">
+      <!-- Left Sidebar -->
+      <aside class="course-sidebar fade-in-up" id="courseSidebar">
+        <h2 class="sidebar-title">memecoin lessons</h2>
+        <nav class="sidebar-nav">
+          <a href="#" class="sidebar-item active" data-chapter="1" data-lesson-id="lesson-1">What is Cryptocurrency?</a>
+          <a href="#" class="sidebar-item" data-chapter="2" data-lesson-id="lesson-2">How to Trade on Solana</a>
+          <a href="#" class="sidebar-item" data-chapter="3" data-lesson-id="lesson-3">Understanding Solana Memecoins</a>
+          <a href="#" class="sidebar-item" data-chapter="4" data-lesson-id="lesson-4">Strategies for Solana Meme Coin Trading</a>
+          <a href="#" class="sidebar-item" data-chapter="5" data-lesson-id="lesson-5">What's Next</a>
+  </nav>
+      </aside>
+
+      <!-- Right Content Panel -->
+      <div class="course-content fade-in-up delay-1">
+        <div class="content-inner">
+          <h2 class="content-title" id="contentTitle">What is Cryptocurrency and how does it work?</h2>
+          <div class="content-body" id="contentBody">
+            <!-- Lesson content will be loaded by JavaScript -->
+            </div>
+        </div>
+    </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 pinkpotato</p>
+  </footer>
+
+  <a href="dashboard.html" class="floating-back-btn" title="Go back">
+    <span>←</span>
+  </a>
+
+  <script src="../scripts/cursor-utils.js"></script>
+  <script>
+    // Hamburger menu toggle - Initialize variables first
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('courseSidebar');
+    
+    function closeSidebar() {
+      if (sidebar) sidebar.classList.remove('sidebar-open');
+      if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+    }
+    
+    function toggleSidebar() {
+      if (sidebar) sidebar.classList.toggle('sidebar-open');
+      if (hamburgerBtn) hamburgerBtn.classList.toggle('active');
+    }
+    
+    if (hamburgerBtn && sidebar) {
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidebar();
+      });
+      
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+          if (sidebar && sidebar.classList.contains('sidebar-open')) {
+            if (!sidebar.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+              closeSidebar();
+            }
+          }
+        }
+      });
+    }
+
+    // Function to load chapter content
+    function loadChapterContent(chapter) {
+      const contentTitle = document.getElementById('contentTitle');
+      const contentBody = document.getElementById('contentBody');
+      
+      if (chapter === '1') {
+        contentTitle.textContent = 'What is Cryptocurrency and how does it work?';
+        contentBody.innerHTML = `
+          <div class="lesson-content">
+            <section class="lesson-section">
+              <h3 class="section-title">Cryptocurrency – meaning and definition</h3>
+              <p>Cryptocurrency, sometimes called crypto-currency or crypto, is any form of currency that exists digitally or virtually and uses cryptography to secure transactions. Cryptocurrencies don't have a central issuing or regulating authority, instead using a decentralized system to record transactions and issue new units.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">What is cryptocurrency?</h3>
+              <p>Cryptocurrency is a digital form of money that doesn't rely on banks or governments. It works through a peer-to-peer system, allowing people to send and receive payments directly with anyone, anywhere.</p>
+              <p>Instead of physical cash, cryptocurrencies exist only online as records of transactions stored on a public ledger. These transactions are secured using encryption, which keeps payments safe and prevents fraud. Cryptocurrencies are stored and managed using digital wallets.</p>
+              <p>The first cryptocurrency was Bitcoin, launched in 2009. Since then, many others have been created, and people often trade them to try to make a profit.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">How does cryptocurrency work?</h3>
+              <p>Cryptocurrencies run on a technology called blockchain, which is a shared and public record of all transactions. This ledger is maintained by many computers around the world, not a single authority.</p>
+              <p>New coins can be created through processes like mining or other validation methods, depending on the network. When you own cryptocurrency, you don't own something physical—you own a private key that gives you control over your funds and lets you transfer them without a middleman.</p>
+              <p>Blockchain technology is still developing, and in the future it may be used for things like stocks, contracts, and other financial assets.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Examples of cryptocurrencies</h3>
+              <div class="crypto-examples">
+                <div class="crypto-item">
+                  <h4 class="crypto-name">Bitcoin (BTC)</h4>
+                  <p>The first and most well-known cryptocurrency, created as a decentralized alternative to traditional money.</p>
+                </div>
+                <div class="crypto-item">
+                  <h4 class="crypto-name">Ethereum (ETH)</h4>
+                  <p>A blockchain platform that allows developers to build apps and smart contracts, with Ether as its currency.</p>
+                </div>
+                <div class="crypto-item">
+                  <h4 class="crypto-name">Solana (SOL)</h4>
+                  <p>A fast, low-cost blockchain designed for high-speed transactions and decentralized applications.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">What is Solana?</h3>
+              <p>Solana is a blockchain.</p>
+              <p>A blockchain is a public network that lets people send money, trade tokens, and use apps without banks or middlemen.</p>
+              <p>Solana is a Layer 1 blockchain, meaning everything happens directly on its own network (not on top of another chain).</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">You can do these on Solana:</h4>
+                <ul class="feature-list">
+                  <li>Send SOL (its native coin)</li>
+                  <li>Trade memecoins and tokens</li>
+                  <li>Use DeFi apps (swaps, lending, staking)</li>
+                  <li>Mint and trade NFTs</li>
+                  <li>Build fast crypto apps</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">What makes Solana different</h3>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">⚡ Speed</h4>
+                <p>Solana is extremely fast. Transactions usually confirm within seconds, sometimes almost instantly. This speed matters because trades execute quickly, users don't wait long for confirmations, and there is less risk of price moving while a transaction is pending.</p>
+                <div class="example-box">
+                  <strong>Example:</strong>
+                  <p>You see a new memecoin launch and buy instantly. Your transaction confirms before the price has time to move much, so you get close to the price you clicked.</p>
+                  <p>On slower chains, the price might move while your transaction is still pending, causing you to enter much higher than expected.</p>
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">💰 Low fees</h4>
+                <p>Transactions on Solana usually cost less than a cent. This means users can trade small amounts, make multiple transactions, and learn without fees destroying their balance. Even active traders don't worry about costs adding up.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">📈 Scalability</h4>
+                <p>Solana is designed to handle a large number of users at the same time. When activity increases, the network stays fast and fees remain low instead of becoming congested.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Why trade on Solana?</h3>
+              <p>Traders like Solana because it matches how real trading works. Trades execute quickly, which reduces missed entries and exits. Low fees make strategies like scalping, dollar-cost averaging, and experimenting viable. Most new memecoins launch on Solana, creating constant opportunities. Trading tools such as DEXs, terminals, and bots are optimized for speed and simplicity.</p>
+              <p>On slower or more expensive blockchains, mistakes are costly. On Solana, traders can learn by actually trading.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">What is a crypto wallet?</h3>
+              <p>A crypto wallet is not an account like a bank app or social media login.</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">A wallet is a key manager</h4>
+                <p>It stores or controls access to your private keys and those keys prove you are allowed to move funds on the blockchain.</p>
+              </div>
+
+              <div class="info-box">
+                <h4 class="info-title">Your crypto is not inside the app</h4>
+                <p>Your coins and tokens live on the blockchain. The wallet app only lets you view balances and sign transactions.</p>
+              </div>
+
+              <div class="example-box">
+                <strong>Think of it like this:</strong>
+                <p><strong>Blockchain</strong> is a public scoreboard that shows who owns what</p>
+                <p><strong>Wallet</strong> is the remote control that lets you approve changes on that scoreboard</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Public key vs private key (simple analogy)</h3>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Public key or address</h4>
+                <p>This is safe to share. People send funds to it. It is like a home address or bank IBAN.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Private key</h4>
+                <p>This must stay secret. It allows you to send funds out. It is like the key to your house or your card PIN and signature combined.</p>
+              </div>
+
+              <div class="info-box" style="background: rgba(255, 100, 100, 0.1); border-left: 3px solid rgba(255, 100, 100, 0.5);">
+                <p><strong>Warning:</strong> If someone gets your private key or seed phrase, they can move your funds and nothing can reverse it.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Custodial vs non-custodial wallets</h3>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Custodial wallet</h4>
+                <ul class="feature-list">
+                  <li>Your keys are held by a company</li>
+                  <li>Easy for beginners</li>
+                  <li>Password recovery is possible</li>
+                  <li>You rely on the platform and can be frozen or blocked</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Non-custodial wallet</h4>
+                <ul class="feature-list">
+                  <li>You control the keys</li>
+                  <li>You control the funds directly</li>
+                  <li>Used for DeFi and memecoin trading</li>
+                  <li>If you lose recovery info there is no reset</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Why "not your keys, not your coins" matters</h3>
+              <p>If you do not control the private keys you do not fully own the crypto.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">With custodial wallets</h4>
+                <ul class="feature-list">
+                  <li>You hold an IOU</li>
+                  <li>You trust the company to let you withdraw</li>
+                  <li>Rules can change</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">With non-custodial wallets</h4>
+                <ul class="feature-list">
+                  <li>You own the assets directly on chain</li>
+                  <li>You can move funds anytime</li>
+                  <li>No permission needed</li>
+                </ul>
+              </div>
+
+              <p>This is why active traders prefer self custody.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Safety Warnings: Seed Phrases</h3>
+              <p>A seed phrase is a 12 or 24 word recovery phrase. It is the master key to your wallet.</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">What it really means</h4>
+                <p>Your seed phrase can recreate your wallet on any device.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">If someone has it</h4>
+                <ul class="feature-list">
+                  <li>They can import your wallet</li>
+                  <li>They can drain all funds</li>
+                  <li>You usually cannot recover anything</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">If you lose it</h4>
+                <ul class="feature-list">
+                  <li>You may lose access forever</li>
+                  <li>There is no forgot password option</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Non negotiable rules</h3>
+              <div class="info-box" style="background: rgba(255, 200, 0, 0.15); border-left: 3px solid rgba(255, 200, 0, 0.6);">
+                <ul class="feature-list">
+                  <li>Never share your seed phrase with anyone</li>
+                  <li>No real support team will ask for it</li>
+                  <li>Never type it into websites or forms</li>
+                  <li>Store it offline on paper</li>
+                  <li>Do not screenshot it</li>
+                  <li>Do not store it in notes apps or cloud storage</li>
+                </ul>
+              </div>
+              
+              <div class="example-box">
+                <p><strong>Password</strong> protects the app</p>
+                <p><strong>Seed phrase</strong> protects the money</p>
+                <p>Passwords can be changed. Seed phrases cannot.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Common seed phrase scams</h3>
+              <div class="info-box" style="background: rgba(255, 100, 100, 0.1); border-left: 3px solid rgba(255, 100, 100, 0.5);">
+                <ul class="feature-list">
+                  <li>Fake support messages</li>
+                  <li>Urgent warnings saying your wallet is compromised</li>
+                  <li>Fake airdrop or claim sites</li>
+                  <li>Fake wallet popups that look real</li>
+                </ul>
+                <p style="margin-top: 16px; font-weight: 600;">If you feel rushed or pressured, stop immediately.</p>
+              </div>
+            </section>
+
+            <div style="text-align: center; margin-top: 40px;">
+              <button class="next-lesson-btn" id="nextLessonBtn" data-next-chapter="2">
+                Next Lesson →
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (chapter === '2') {
+        contentTitle.textContent = 'How to Trade on Solana';
+        contentBody.innerHTML = `
+          <div class="lesson-content">
+            <section class="lesson-section">
+              <h3 class="section-title">Before you start trading</h3>
+              <p>Before you start trading on Solana, there are a few important terminologies you must understand. These terms come up constantly, and not knowing them is how beginners make costly mistakes.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Key Terminologies You Must Know</h3>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Contract Address (CA)</h4>
+                <p>A contract address is a unique identifier on the blockchain that represents the smart contract controlling a specific token. Every token has its own contract address, and no two are the same.</p>
+                <div class="example-box">
+                  <strong>Think of a contract address like DNA.</strong>
+                  <p>Tokens can share the same name, logo, and even the same market cap at a moment in time, but their contract addresses will always be different. This is how you confirm you are buying the correct token.</p>
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Liquidity Pool</h4>
+                <p>A liquidity pool is a pool of two paired tokens locked inside a smart contract on a decentralized exchange. This pool allows users to buy and sell tokens without needing a traditional buyer or seller on the other side.</p>
+                <div class="info-box" style="background: rgba(255, 200, 0, 0.15); border-left: 3px solid rgba(255, 200, 0, 0.6);">
+                  <p><strong>Important:</strong> If a token has no liquidity, you cannot trade it.</p>
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Market Cap (MC)</h4>
+                <p>Market cap is used to estimate the total value of a cryptocurrency. It is calculated by multiplying the current token price by the total number of tokens in circulation.</p>
+                <div class="example-box">
+                  <p><strong>Remember:</strong> Market cap is more important than price alone. A low-priced token can still be very expensive if the supply is huge.</p>
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Wallet Address</h4>
+                <p>A wallet address is a long string of letters and numbers that works like a bank account number for crypto. This is what you share when receiving funds. It is public and safe to share.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Getting SOL and Setting Up Wallets</h3>
+              <p>To trade on Solana, you need SOL. SOL is used to buy tokens and to pay transaction fees.</p>
+              <p>SOL is stored in wallet addresses. To generate wallet addresses, you need a wallet app.</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">Popular wallets include:</h4>
+                <ul class="feature-list">
+                  <li>Phantom</li>
+                  <li>Backpack</li>
+                  <li>Jupiter</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Multi-chain vs Solana-only wallets</h4>
+                <p>Some wallets support multiple blockchains. For example, Phantom can generate Solana, Ethereum, and Bitcoin addresses.</p>
+                <p>Other wallets like Jupiter focus only on Solana, which often results in lower fees and faster trading.</p>
+              </div>
+
+              <p>Once your wallet is set up and funded with SOL, you are ready to trade.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">How Memecoin Trading Works on Solana</h3>
+              <p>Every memecoin has its own unique contract address. This is the single most important thing to verify before buying any token.</p>
+              
+              <div class="info-box" style="background: rgba(255, 100, 100, 0.1); border-left: 3px solid rgba(255, 100, 100, 0.5);">
+                <p><strong>Warning:</strong> Many scam tokens reuse popular names and images. If you buy the wrong contract address, you are buying the wrong coin.</p>
+                <p style="margin-top: 12px; font-weight: 600;">Always confirm the contract address before trading.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">The Traditional Way to Buy a Token (Swap Method)</h3>
+              <p>The oldest way to buy a token is by making a swap directly from your wallet.</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">The process:</h4>
+                <ol class="feature-list" style="list-style-type: decimal; padding-left: 24px;">
+                  <li>You copy the contract address</li>
+                  <li>Paste it into your wallet's swap search bar</li>
+                  <li>Choose how much SOL you want to spend</li>
+                  <li>Approve the transaction</li>
+                </ol>
+              </div>
+
+              <p>Once the transaction completes, the memecoin appears in your wallet.</p>
+              
+              <div class="example-box">
+                <p><strong>How price changes work:</strong></p>
+                <p>If more people buy the token, the price goes up and you are in profit.</p>
+                <p>If people sell, the price goes down and you are in loss.</p>
+              </div>
+
+              <p>This method works, but in 2026 it is no longer the fastest or most efficient way to trade.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Why Traders Use Telegram Bots and Terminals</h3>
+              <p>Speed matters on Solana. By the time a wallet swap confirms, early buyers may already be selling.</p>
+              <p>This is where trading bots and terminals come in.</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">Popular Telegram trading bots include:</h4>
+                <ul class="feature-list">
+                  <li>Trojan Trading Bot</li>
+                  <li>Maestro Trading Bot</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Why use bots?</h4>
+                <ul class="feature-list">
+                  <li>Faster execution</li>
+                  <li>Preset buys and sells</li>
+                  <li>Quicker reactions than manual wallet swaps</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">How Trading Terminals Give You an Edge</h3>
+              <p>Trading terminals go beyond what Telegram bots can do.</p>
+              
+              <div class="info-box">
+                <h4 class="info-title">Terminals like Padre, Axiom, and the Trojan Terminal provide advanced tools:</h4>
+                <ul class="feature-list">
+                  <li>Track wallets in real time</li>
+                  <li>Monitor X (Twitter) activity linked to wallets</li>
+                  <li>View live charts with no delay</li>
+                  <li>See every buy and sell transaction as it happens</li>
+                  <li>Execute trades faster than most retail users</li>
+                </ul>
+              </div>
+
+              <p>This gives you an edge over traders who rely only on basic bots or wallet swaps.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Trading Tools & Resources</h3>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Telegram Trading Bots</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 20px;">
+                  <a href="https://t.me/diomedes_trojanbot?start=r-pinkkpantheress" target="_blank" rel="noopener noreferrer" class="platform-link">
+                    <div class="platform-icon">
+                      <img src="../assets/platform-icons/trojan bot.jpg" alt="Trojan Bot" />
+                    </div>
+                    <div class="platform-name">Trojan Bot</div>
+                  </a>
+                  
+                  <a href="https://t.me/maestro?start=r-pinkpotat00" target="_blank" rel="noopener noreferrer" class="platform-link">
+                    <div class="platform-icon">
+                      <img src="../assets/platform-icons/maestro-icon.jpg" alt="Maestro Bot" />
+                    </div>
+                    <div class="platform-name">Maestro Bot</div>
+                  </a>
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Trading Terminals</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 20px;">
+                  <a href="https://trade.padre.gg/rk/ppotato" target="_blank" rel="noopener noreferrer" class="platform-link">
+                    <div class="platform-icon">
+                      <img src="../assets/platform-icons/padre.jpg" alt="Padre Terminal" />
+                    </div>
+                    <div class="platform-name">Padre</div>
+                  </a>
+                  
+                  <a href="https://axiom.trade/@ppotat0" target="_blank" rel="noopener noreferrer" class="platform-link">
+                    <div class="platform-icon">
+                      <img src="../assets/platform-icons/Axiom-Pro.png" alt="Axiom Terminal" />
+                    </div>
+                    <div class="platform-name">Axiom</div>
+                  </a>
+                  
+                  <a href="https://trojan.com/@pinkpotato" target="_blank" rel="noopener noreferrer" class="platform-link">
+                    <div class="platform-icon">
+                      <img src="../assets/platform-icons/trojan-icon.png" alt="Trojan Terminal" />
+                    </div>
+                    <div class="platform-name">Trojan Terminal</div>
+                  </a>
+                </div>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Important Final Notes for Beginners</h3>
+              <div class="info-box" style="background: rgba(255, 200, 0, 0.15); border-left: 3px solid rgba(255, 200, 0, 0.6);">
+                <ul class="feature-list">
+                  <li>Always verify the contract address before buying</li>
+                  <li>Never trade with money you cannot afford to lose</li>
+                  <li>Start with small amounts while learning</li>
+                  <li>Speed is important, but discipline is more important</li>
+                </ul>
+              </div>
+            </section>
+
+            <div style="text-align: center; margin-top: 40px;">
+              <button class="next-lesson-btn" id="nextLessonBtn" data-next-chapter="3">
+                Next Lesson →
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (chapter === '3') {
+        contentTitle.textContent = 'Understanding Solana Memecoins';
+        contentBody.innerHTML = `
+          <div class="lesson-content">
+            <section class="lesson-section">
+              <p>Solana has become the undisputed home for new meme coin launches, and there are good reasons why.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Speed meets culture</h3>
+              <p>While Ethereum meme coins can be expensive to trade due to high gas fees, Solana's infrastructure makes trading accessible to everyone. Transactions process in milliseconds, and fees average just $0.0025. You can make multiple trades, experiment with small positions, and react instantly to the market without worrying about costs eating into your profits.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">The launchpad advantage</h3>
+              <p>Platforms like Pump.fun made it incredibly easy to create a meme coin on Solana. Combined with permissionless DEXes like Raydium and Jupiter, anyone can create and trade new meme coins within minutes. This has created an explosion of both opportunity and risk.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Community-driven dynamics</h3>
+              <p>Solana meme coins thrive on viral community culture. Strong social media presence drives adoption. Memes spread fast, and prices follow suit. This accessibility has democratized meme coin trading, allowing both experienced traders and newcomers to participate.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Market dynamics of Solana meme coins</h3>
+              <p>Understanding what moves these markets is crucial for successful trading.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Social media is the engine</h3>
+              <p>Twitter, Discord, and Telegram drive meme coin prices more than anything else. A viral tweet from an influencer can send a token soaring. Community sentiment shifts fast, and prices move even faster. Monitoring social channels can help a lot. But it's even more important to recognize viral meme potential and predict what can become popular.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Liquidity challenges are real</h3>
+              <p>Many new meme coins have shallow liquidity pools. Large trades can move prices. Big buys can pump the price. Similarly, big sells can crash the price. This is known as slippage. So what looks like a promising position might become impossible to exit at the price you see on the screen.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Hype cycles move fast</h3>
+              <p>A meme coin can go from launch to moon to forgotten in days or even hours. There is a small window to identify opportunities, enter positions, and take profits. This speed creates opportunity but demands discipline and quick decision-making.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Factors that influence price</h3>
+              <div class="feature-card">
+                <ul class="feature-list">
+                  <li>Community growth and social media engagement</li>
+                  <li>Celebrity or KOLS (key opinion leaders) mentions</li>
+                  <li>Viral moments or cultural relevance</li>
+                  <li>Token holder distribution (watch out for concentrated whale holdings)</li>
+                  <li>Listing on centralized exchanges and perps platforms</li>
+                  <li>Overall market sentiment toward Solana and crypto</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Risk Assessment Framework</h3>
+              <p>Let's be brutally honest: trading Solana meme coins is high-risk.</p>
+              <p>Many traders lose money. But understanding the risks helps you trade smarter.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Common risks you'll face</h3>
+              <div class="info-box" style="background: rgba(255, 100, 100, 0.15); border-left: 3px solid rgba(255, 100, 100, 0.6);">
+                <ul class="feature-list">
+                  <li><strong>Rug pulls and scams.</strong> Meme coin creators or "devs" can remove additional liquidity or sell massive token allocations, leaving traders holding worthless coins. This happens frequently in the meme coin space.</li>
+                  <li><strong>Extreme volatility.</strong> 50% swings in minutes aren't unusual. A profitable position can evaporate before you react.</li>
+                  <li><strong>Low liquidity traps.</strong> You might be able to buy easily but find no buyers when you want to sell.</li>
+                  <li><strong>FOMO-driven decisions.</strong> Seeing others make gains when the price goes up clouds judgment. Chasing pumps often leads to buying tops before prices crash.</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">How to identify pump and dump schemes?</h3>
+              <p>Unfortunately, there is no guaranteed way, as scammers can be very sophisticated. Watch for these red flags:</p>
+              <div class="info-box" style="background: rgba(255, 200, 0, 0.15); border-left: 3px solid rgba(255, 200, 0, 0.6);">
+                <ul class="feature-list">
+                  <li>Sudden price spikes with low volume</li>
+                  <li>Lots of frequent small buys and sells to get the token trending</li>
+                  <li>Coordinated social media campaigns promoting the coin</li>
+                  <li>Anonymous dev teams with large holders across several wallets</li>
+                </ul>
+                <p style="margin-top: 16px; font-weight: 600;">In general, the lower the market cap of a coin, the higher is the risk that a meme coin can be pumped and dumped.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Balancing risk and reward</h3>
+              <p>Smart traders never invest more than they can afford to lose completely.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Key Risk Management Principles</h4>
+                <ul class="feature-list">
+                  <li><strong>Start with small positions while learning.</strong> For every trade, you should assume that you can lose at least 50% and more likely 75% or even 90%. Meme coin prices move fast, so traditional stop losses aren't practical.</li>
+                  <li><strong>Set profit targets before entering trades.</strong> Because you can lose practically the entire trade position, you need a win a lot more than you can lose. You need to see at least 2x and more like 10x.</li>
+                  <li><strong>Take out "initials".</strong> Actually, 2x is where many experienced traders take out "the initials". I.e. after your original position doubled, you sell half. Then the rest of your position has zero risk. You can let it run, knowing that you won't lose money even if the price goes to zero.</li>
+                  <li><strong>Never go all in.</strong> Even if you get lucky at first, it's just a matter of time before you lose your whole stack.</li>
+                </ul>
+              </div>
+            </section>
+
+            <div style="text-align: center; margin-top: 40px;">
+              <button class="next-lesson-btn" id="nextLessonBtn" data-next-chapter="4">
+                Next Lesson →
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (chapter === '4') {
+        contentTitle.textContent = 'Strategies for Solana Meme Coin Trading';
+        contentBody.innerHTML = `
+          <div class="lesson-content">
+            <section class="lesson-section">
+              <p>Having the right tools is just the start. Success in meme coin trading comes from a disciplined strategy and smart research.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">A strategy comes down to 3 key points:</h3>
+              <div class="info-box">
+                <ul class="feature-list">
+                  <li><strong>What to buy</strong></li>
+                  <li><strong>When to buy</strong></li>
+                  <li><strong>When to sell</strong></li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">What to buy: choosing Solana meme coins</h3>
+              <p>The great news is that there is no fundamental analysis. All meme coins are literally memes. There is no technology or business that's connected to the coin.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">How meme coin prices work</h4>
+                <p>The price of any meme coin is based only on people buying and selling.</p>
+                <ul class="feature-list">
+                  <li>The more people buy, the higher price goes.</li>
+                  <li>When people start to sell, the price goes down.</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">The attention and hype cycle</h4>
+                <p>People buy meme coins based on attention and hype. Something catches attention, they buy it because they think others will buy it. If it catches on, the price goes up as more buyers join.</p>
+                <p>The trend reverses when people start selling. As the price goes down, people get afraid and sell. This triggers even more selling.</p>
+              </div>
+
+              <div class="info-box">
+                <p><strong>Important:</strong> Relatively low liquidity of meme coins amplifies the moves. Prices go up or down A LOT. And for smaller market caps, this is even more dramatic: it's easier to make a 10x move on a $10k meme coin than on a $10m coin.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Understanding attention</h3>
+              <p>Attention is the main driver of meme coin price movement.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">How attention creates opportunities</h4>
+                <p>When a meme coin reaches millions in market cap, it proves that people care about that theme. At that point, the main coin may already be expensive, but the meta is still active.</p>
+                <p>This is when traders look for lower coins with the same or similar narrative.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">What are betas?</h4>
+                <p>These smaller coins are called <strong>betas</strong>. A beta shares the same narrative as the main runner but has a much lower market cap and has not pumped yet.</p>
+                
+                <div class="example-box">
+                  <strong>Example:</strong>
+                  <p>If a cat themed meme coin runs to tens of millions in market cap, attention stays on cat coins. Traders then start searching for other cat coins at lower market caps. Money rotates from the main runner into these smaller ones.</p>
+                </div>
+              </div>
+
+              <div class="info-box" style="background: rgba(255, 200, 0, 0.15); border-left: 3px solid rgba(255, 200, 0, 0.6);">
+                <p><strong>Remember:</strong> You are not buying because the coin is special. You are buying because it's the current meta.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Understanding emotions</h3>
+              <p>Meme coin markets are driven by emotion.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">The emotional cycle</h4>
+                <ul class="feature-list">
+                  <li>When prices are dropping, fear takes over and people panic sell.</li>
+                  <li>When prices are pumping, greed takes over and people chase highs.</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Strong traders do the opposite</h4>
+                <ul class="feature-list">
+                  <li>They buy when others are afraid, as long as the trend is still alive.</li>
+                  <li>They sell when others are greedy and rushing in late.</li>
+                </ul>
+              </div>
+
+              <div class="info-box">
+                <p>Buying during fear feels uncomfortable. Selling during hype feels wrong. That is why most people do not do it, and why it works.</p>
+              </div>
+
+              <div class="example-box">
+                <p><strong>Your goal:</strong> Find meme coins that have the highest potential to go up.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">When to buy: entry strategy</h3>
+              <p>You have 2 options:</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Option 1: Buy your position in one move</h4>
+                <p>This is the simpler approach. You decide how much you want to invest and buy it all at once.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Option 2: Scale in by buying several times</h4>
+                <p>This requires more discipline. You buy your position in smaller chunks over time.</p>
+              </div>
+
+              <div class="info-box" style="background: rgba(255, 200, 0, 0.15); border-left: 3px solid rgba(255, 200, 0, 0.6);">
+                <p><strong>Important:</strong> You can try both options. But buying in one go is easier.</p>
+                <p style="margin-top: 12px;">Scaling needs discipline. Before you start, you should know how much you want to buy. Avoid "averaging losers" by buying more when the price goes down.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">When to sell: exit strategy</h3>
+              <p>Before you buy a meme coin, you should know when you'll sell.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">Don't get too greedy</h4>
+                <p>If the meme coin is going up, don't get too greedy. Nobody went broke by selling. But plenty of traders round-tripped from nothing to millions and back to nothing.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Sell gradually on the way up</h4>
+                <p>It's best to sell gradually on the way up:</p>
+                <ul class="feature-list">
+                  <li>You lock in some profit and reduce risk</li>
+                  <li>You still keep some in case the price goes further</li>
+                  <li>Never go to zero, always a "moon bag" — making a 10x doesn't feel good when you sold it all and the meme coin does a 300x from there…</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Know when to cut losses</h4>
+                <p>But selling isn't all about profit-taking.</p>
+                <p>Have a number for when you'll sell your meme coin at a loss. Hoping it would recover rarely works. Also, there is a mental cost to having a losing position that you look at all the time. Just cut it, move on, and never look back.</p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Wallet tracking</h3>
+              <p>One of the most powerful strategies is learning from successful traders by tracking their wallets and watching what they do.</p>
+              
+              <div class="feature-card">
+                <h4 class="feature-title">What you can learn from wallet tracking</h4>
+                <p>By following lots of other wallets, you can figure out:</p>
+                <ul class="feature-list">
+                  <li><strong>What to buy</strong> — spotting trending meme coins early</li>
+                  <li><strong>When to buy</strong> — when strong traders are buying (and early buyers "jeet" or sell)</li>
+                  <li><strong>When to sell</strong> — when FOMO-chasing buyers pile in at the top and strong traders scale out</li>
+                </ul>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">How to use wallet tracking effectively</h4>
+                <ul class="feature-list">
+                  <li><strong>Identify wallets worth following.</strong> Look for consistently profitable traders, early adopters of successful memes, or wallets associated with respected analysts.</li>
+                  <li><strong>Analyze their behavior.</strong> What tokens do they accumulate and when? When do they take profits? How do they size positions?</li>
+                  <li><strong>Don't blindly copy.</strong> Use their actions as signals to do your own research. They might have different risk tolerance or information you lack.</li>
+                </ul>
+              </div>
+
+              <div class="info-box">
+                <h4 class="info-title">The learning advantage</h4>
+                <p>Following experienced wallets is like having mentors who don't know they're teaching you. Over time, you'll develop intuition for what works and what doesn't.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">Learn more about wallet tracking</h4>
+                <p><a href="https://x.com/kunleofweb3/status/2011004168694018184" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">@kunleofweb3 wrote a detailed thread on how to track wallets. Check it out →</a></p>
+              </div>
+            </section>
+
+            <div style="text-align: center; margin-top: 40px;">
+              <button class="next-lesson-btn" id="nextLessonBtn" data-next-chapter="5">
+                What's Next →
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (chapter === '5') {
+        contentTitle.textContent = "What's Next";
+        contentBody.innerHTML = `
+          <div class="lesson-content">
+            <section class="lesson-section">
+              <p>You have covered the fundamentals. That puts you ahead of most people who trade memecoins without any framework at all.</p>
+              <p>But this course does not teach you everything. No course can.</p>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Real learning comes from trading</h3>
+              <p>Reading about meme coin trading and actually doing it are two completely different things. The emotional pressure of a live position, the discipline required to stick to a plan, the instincts built from watching charts for hundreds of hours — none of that comes from a lesson.</p>
+
+              <div class="info-box">
+                <p>The best traders you will find on Solana did not learn from a course. They learned by trading, losing, adjusting, and trading again. Experience is the real teacher.</p>
+              </div>
+
+              <div class="feature-card">
+                <h4 class="feature-title">What to focus on from here</h4>
+                <ul class="feature-list">
+                  <li>Start small. Use amounts you can afford to lose entirely.</li>
+                  <li>Keep a record of every trade — what you bought, why, and what happened.</li>
+                  <li>Review your losses more carefully than your wins.</li>
+                  <li>Watch how experienced traders talk about their decisions, not just their results.</li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <h3 class="section-title">Further reading</h3>
+              <p><strong>@Cypherpunkgod</strong> wrote a book on memecoin trading aimed at beginners. It covers more ground than this course does.</p>
+
+              <div class="feature-card" style="border-left: 3px solid rgba(var(--accent-rgb), 0.5);">
+                <h4 class="feature-title">Memecoin Trading Guide by @Cypherpunkgod</h4>
+                <p>A good starting point if you want more depth after finishing here.</p>
+                <p style="margin-top: 16px;">
+                  <a
+                    href="https://x.com/Cypherpunkgod/status/1991525333674389747?s=20"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="color: var(--accent); text-decoration: underline; font-weight: 500;"
+                  >Read the post and find the book →</a>
+                </p>
+              </div>
+            </section>
+
+            <section class="lesson-section">
+              <div class="info-box" style="background: rgba(255, 255, 255, 0.03); border-left: 3px solid rgba(var(--accent-rgb), 0.4);">
+                <p>Good luck niggers.</p>
+              </div>
+            </section>
+          </div>
+        `;
+      }
+    }
+
+    // Load user progress and update sidebar
+    async function loadUserProgress() {
+      const user = firebase.auth().currentUser;
+      if (!user) return;
+      
+      try {
+        const allProgress = await getAllLessonsProgress(user.uid);
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+          const lessonId = item.dataset.lessonId;
+          if (lessonId && allProgress[lessonId] && allProgress[lessonId].completed) {
+            item.classList.add('completed');
+          }
+        });
+      } catch (error) {
+        console.error('Error loading progress:', error);
+      }
+    }
+
+    // Check auth state and load progress
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (user) {
+        await loadUserProgress();
+        // Load first lesson by default
+        loadChapterContent('1');
+      } else {
+        window.location.href = 'login.html';
+      }
+    });
+
+    // Chapter navigation
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Remove active from all items
+        document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+        
+        // Add active to clicked item
+        item.classList.add('active');
+        
+        // Update content based on chapter
+        const chapter = item.dataset.chapter;
+        loadChapterContent(chapter);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Close sidebar on mobile after selection
+        if (window.innerWidth <= 768) {
+          setTimeout(closeSidebar, 300);
+        }
+      });
+    });
+
+    // Next Lesson Button Handler
+    document.addEventListener('click', async (e) => {
+      if (e.target.id === 'nextLessonBtn' || e.target.closest('#nextLessonBtn')) {
+        const btn = e.target.closest('#nextLessonBtn') || e.target;
+        const nextChapter = btn.dataset.nextChapter;
+        const user = firebase.auth().currentUser;
+        
+        if (!user) {
+          alert('Please log in to continue');
+          return;
+        }
+        
+        try {
+          // Determine current chapter from active sidebar item
+          const activeItem = document.querySelector('.sidebar-item.active');
+          const currentChapter = activeItem ? activeItem.dataset.chapter : '1';
+          const currentLessonId = `lesson-${currentChapter}`;
+          
+          // Save lesson completion
+          await saveLessonProgress(user.uid, currentLessonId, {
+            completed: true,
+            completedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          
+          // Update sidebar to show completed
+          const completedItem = document.querySelector(`[data-lesson-id="${currentLessonId}"]`);
+          if (completedItem) {
+            completedItem.classList.add('completed');
+          }
+          
+          // Switch to next chapter
+          if (nextChapter === '2' || nextChapter === '3' || nextChapter === '4' || nextChapter === '5') {
+            const nextItem = document.querySelector(`[data-chapter="${nextChapter}"]`);
+            if (nextItem) {
+              nextItem.click();
+            }
+          }
+        } catch (error) {
+          console.error('Error saving progress:', error);
+          alert('Error saving progress. Please try again.');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

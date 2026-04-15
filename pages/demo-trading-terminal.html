@@ -1,0 +1,4168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lykeion demo trading terminal.">
+    <title>Lykeion - Demo Terminal</title>
+    <link rel="icon" type="image/png" href="../assets/icons/favicon.png">
+    <link rel="apple-touch-icon" href="../assets/icons/favicon.png">
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'NCLNeovibes Demo';
+            src: url('../assets/fonts/NCLNeovibes-Demo.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: block;
+        }
+        html, body { height: 100%; margin: 0; }
+        body.page-demo-trading {
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 100vh;
+            background: #06060a;
+            color: #e6e6ea;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        /* ===== Navbar (own row; overrides style.css .page-demo-trading floating pill) ===== */
+        body.page-demo-trading .navbar {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 24px;
+            background: #0a0a10;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: relative !important;
+            left: auto !important;
+            right: auto !important;
+            top: auto !important;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            border-radius: 0;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        body.page-demo-trading .nav-spacer {
+            display: none;
+            width: 0;
+            flex: 0 0 0;
+            pointer-events: none;
+        }
+        .nav-logo { text-decoration: none; color: inherit; font-weight: 700; font-size: 24px; letter-spacing: -0.03em; }
+        .nav-right { display: flex; gap: 12px; align-items: center; margin-left: auto; }
+
+        /* Floating back (replaces navbar “Back to board” on terminal) */
+        .terminal-fab-back {
+            position: fixed;
+            bottom: 32px;
+            right: 22px;
+            z-index: 5000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(14,14,20,0.94);
+            color: #e6e6ea;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .terminal-fab-back:hover {
+            background: rgba(255,255,255,0.08);
+            transform: scale(1.04);
+        }
+
+        .wallet-hud {
+            display: flex; align-items: center;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+        .wallet-hud .wh-bal { font-weight: 600; }
+        button.wallet-hud.wallet-hud--trigger {
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
+            margin: 0;
+        }
+        button.wallet-hud.wallet-hud--trigger:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+        }
+
+        /* ===== Ticker strip (top of chart column — same surface as chart toolbar) ===== */
+        .ticker-strip {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px 32px;
+            padding: 14px 10px 10px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1c1f26;
+            border-radius: 12px 12px 0 0;
+            flex: 0 0 auto;
+        }
+        .ticker-strip .t-icon {
+            width: 52px; height: 52px; border-radius: 10px;
+            background: rgba(255,255,255,0.08); object-fit: cover;
+            flex: 0 0 52px;
+        }
+        .ticker-strip .t-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .ticker-strip .t-ticker { font-weight: 700; font-size: 26px; letter-spacing: -0.35px; line-height: 1.1; }
+        .ticker-strip .t-name { font-size: 14px; opacity: 0.55; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .ticker-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 36px;
+            align-items: baseline;
+            font-variant-numeric: tabular-nums;
+            min-width: 0;
+        }
+        .ticker-stats .stat { display: flex; flex-direction: column; gap: 4px; min-width: 80px; }
+        .ticker-stats .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.75px; opacity: 0.45; font-weight: 600; }
+        .ticker-stats .stat-value { font-weight: 600; }
+        .ticker-stats .stat-mc .stat-value { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+        .ticker-stats .stat-vol .stat-value, .ticker-stats .stat-liq .stat-value { font-size: 21px; opacity: 0.92; line-height: 1; }
+
+        .ticker-links {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+        .ticker-links a {
+            font-size: 12px; padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-decoration: none; color: inherit;
+            transition: background 120ms ease;
+        }
+        .ticker-links a:hover { background: rgba(255,255,255,0.1); }
+
+        /* ===== Main body grid (fills rest of viewport) ===== */
+        .term-main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 16px;
+            padding: 16px 24px 24px;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .term-col {
+            display: flex; flex-direction: column;
+            gap: 12px; min-width: 0; min-height: 0;
+        }
+        .term-col.term-left { overflow-y: auto; }
+        .term-col.term-center { overflow: hidden; }
+
+        /* Left column: ticker strip + chart share one panel */
+        .term-col.term-center {
+            overflow: hidden;
+            background: #0e0e14;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            gap: 0;
+        }
+
+        /* Right column: position + tx list + trade share one panel; trade pinned bottom; tx list scrolls */
+        .term-col.term-right {
+            overflow: hidden;
+            gap: 0;
+            background: #0e0e14;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+        }
+        .term-col.term-right > .term-card {
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex: 0 0 auto;
+        }
+        .term-col.term-right > .term-card:last-child { border-bottom: 0; }
+        .term-col.term-right > .term-card.tx-card {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .term-col.term-right > .term-card.tx-card .tx-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+            overflow-y: auto;
+        }
+
+        .term-card {
+            background: #0e0e14;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .term-card h4 {
+            margin: 0 0 10px; font-size: 10px;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            opacity: 0.5; font-weight: 600;
+        }
+
+        .term-chart-row {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .mobile-terminal-tabs {
+            display: none;
+        }
+        .term-chart-wrap {
+            background: #000000;
+            border: 0;
+            border-radius: 0;
+            overflow: hidden;
+            flex: 1;
+            min-height: 360px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .mobile-quick-trade {
+            display: none;
+        }
+        .chart-ohlc-legend {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            z-index: 4;
+            font-size: 11px;
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            color: #d1d4dc;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid #2a2e39;
+            border-radius: 4px;
+            padding: 6px 10px;
+            pointer-events: none;
+            max-width: min(420px, calc(100% - 24px));
+            line-height: 1.45;
+        }
+        .chart-ohlc-legend[hidden] { display: none; }
+        .chart-ohlc-legend .ohlcm { opacity: 0.85; }
+        .chart-ohlc-legend .ohlc-tag { color: #868993; margin-right: 6px; }
+        .chart-ohlc-legend .ohlc-up { color: #26a69a; }
+        .chart-ohlc-legend .ohlc-down { color: #ef5350; }
+        .term-chart-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 16px;
+            padding: 8px 10px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1c1f26;
+            flex: 0 0 auto;
+        }
+        .chart-toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-toolbar-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            opacity: 0.45;
+            font-weight: 600;
+        }
+        .chart-toolbar-btns {
+            display: flex;
+            gap: 2px;
+            background: #000000;
+            border-radius: 6px;
+            padding: 2px;
+            border: 1px solid #2a2e39;
+        }
+        .chart-toolbar-btns button {
+            background: transparent;
+            border: 0;
+            color: #b2b5be;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-variant-numeric: tabular-nums;
+        }
+        .chart-toolbar-btns button:hover { color: #e6e6ea; background: rgba(255,255,255,0.06); }
+        .chart-toolbar-btns button.is-active {
+            background: #2962ff;
+            color: #fff;
+        }
+        .chart-toolbar-fit {
+            margin-left: auto;
+            background: #000000;
+            border: 1px solid #2a2e39;
+            color: #b2b5be;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .chart-toolbar-fit:hover { background: #2a2e39; color: #fff; }
+        .term-chart-inner {
+            flex: 1;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0;
+        }
+        #term-chart {
+            flex: 1;
+            width: 100%;
+            min-height: 320px;
+        }
+        /** Embedded TradingView chart (replaces lightweight-charts panel) */
+        .term-chart-wrap--tv .term-chart-toolbar {
+            display: none;
+        }
+        .term-chart-wrap--tv .chart-ohlc-legend,
+        .term-chart-wrap--tv .chart-float-toasts {
+            display: none !important;
+        }
+        .term-chart-wrap--tv #term-chart {
+            flex: 1;
+            width: 100%;
+            min-height: min(58vh, 620px);
+            height: auto;
+        }
+        .term-chart-wrap--tv .term-chart-inner {
+            min-height: min(58vh, 620px);
+        }
+        /** GeckoTerminal embed: chart pane only (crop/zoom; pair chrome is clipped). */
+        .term-chart-wrap--gt .term-chart-toolbar {
+            display: none !important;
+        }
+        .term-chart-wrap--gt .chart-ohlc-legend {
+            display: none !important;
+        }
+        .term-chart-wrap--gt .chart-float-toasts {
+            z-index: 50;
+        }
+        .term-chart-wrap--gt #term-chart.term-chart--gt {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            min-height: 420px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .term-chart-wrap--gt .gt-embed-crop {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: 6px;
+            background: #0b0e11;
+        }
+        /* Oversized iframe + negative offset: viewport shows mostly the TradingView chart area */
+        .term-chart-wrap--gt .gt-embed-iframe {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            border: 0;
+            background: #0d1117;
+        }
+        @media (max-width: 900px) {
+            .term-chart-wrap--gt .gt-embed-iframe {
+                left: -4%;
+                top: -20%;
+                width: 108%;
+                height: 200%;
+            }
+        }
+        .chart-float-toasts {
+            position: absolute;
+            top: 10px;
+            right: 56px;
+            left: auto;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+            max-width: min(280px, calc(100% - 20px));
+        }
+        .chart-float-toast {
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+            padding: 6px 10px;
+            border-radius: 6px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(19,23,34,0.92);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            line-height: 1.35;
+        }
+        .chart-float-toast strong {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.65;
+            margin-bottom: 2px;
+        }
+        .chart-float-toast.is-entry { border-color: rgba(38,166,154,0.45); }
+        .chart-float-toast.is-exit { border-color: rgba(239,83,80,0.45); }
+        .chart-float-toast.is-buy-pop {
+            border-color: rgba(74,222,128,0.6);
+            background: rgba(16,185,129,0.22);
+            color: #86efac;
+            animation: toastPop 280ms ease-out;
+        }
+        .chart-float-toast.is-sell-pop {
+            border-color: rgba(248,113,113,0.6);
+            background: rgba(239,68,68,0.22);
+            color: #fca5a5;
+            animation: toastPop 280ms ease-out;
+        }
+        @keyframes toastPop {
+            0% { transform: translateX(8px) scale(0.96); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        .pnl-card-modal {
+            position: fixed; inset: 0; z-index: 15000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .pnl-card-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+        }
+        .pnl-card-dialog {
+            position: relative;
+            background: #0b0d12;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 22px;
+            max-width: 760px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .pnl-card-close {
+            position: absolute; top: 10px; right: 12px;
+            background: transparent; border: 0; color: #fff;
+            font-size: 22px; cursor: pointer; opacity: 0.7;
+        }
+        .pnl-card-close:hover { opacity: 1; }
+        .pnl-card-preview { margin-top: 6px; }
+        .pnl-card-actions {
+            display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;
+        }
+        .pnl-card-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #fff;
+            padding: 9px 18px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+        }
+        .pnl-card-btn:hover { background: rgba(255,255,255,0.14); }
+        .pnl-card-btn.is-primary {
+            background: #4ade80; color: #051a09; border-color: transparent;
+        }
+        .pnl-card-btn.is-primary:hover { background: #6ee093; }
+
+        .pnl-handle-setup-modal { z-index: 16000; }
+        .pnl-handle-dialog { max-width: 400px; padding-bottom: 18px; }
+        .pnl-handle-title {
+            margin: 0 0 8px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .pnl-handle-hint {
+            margin: 0 0 14px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: rgba(230, 230, 234, 0.65);
+        }
+        .pnl-handle-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.05);
+            color: #f4f4f8;
+            font: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            margin-bottom: 16px;
+        }
+        .pnl-handle-input:focus {
+            outline: none;
+            border-color: rgba(74, 222, 128, 0.45);
+            box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.2);
+        }
+        .pnl-handle-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .trades-legend { font-size: 11px; font-variant-numeric: tabular-nums; }
+        .trades-legend .tl-entry { color: #4ade80; font-weight: 600; margin-bottom: 8px; }
+        .trades-legend .tl-empty { opacity: 0.5; font-size: 11px; }
+        .trades-legend .tl-row {
+            display: grid; grid-template-columns: 30px 1fr auto;
+            gap: 4px 8px; padding: 5px 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .trades-legend .tl-row:first-of-type { border-top: 0; }
+        .trades-legend .tl-row.buy .tl-side { color: #4ade80; }
+        .trades-legend .tl-row.sell .tl-side { color: #f87171; }
+        .trades-legend .tl-side { font-weight: 700; font-size: 10px; }
+        .trades-legend .tl-pnl.is-pos { color: #4ade80; }
+        .trades-legend .tl-pnl.is-neg { color: #f87171; }
+        .trades-legend .tl-mc { opacity: 0.6; font-size: 10px; }
+
+        .pos-strip { padding: 12px 14px; }
+        .pos-mobile-summary {
+            display: none;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .pos-ms-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .pos-ms-block:last-child { text-align: right; align-items: flex-end; }
+        .pos-ms-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.5;
+            font-weight: 600;
+        }
+        .pos-ms-val {
+            font-size: 15px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .pos-ms-val.is-pos { color: #4ade80; }
+        .pos-ms-val.is-neg { color: #f87171; }
+        .pos-cells {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .pos-cell {
+            display: flex; flex-direction: column; gap: 3px;
+            min-width: 0;
+        }
+        .pos-label {
+            font-size: 9px; text-transform: uppercase;
+            letter-spacing: 0.6px; opacity: 0.5; font-weight: 600;
+        }
+        .pos-val {
+            font-weight: 600; font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .pos-val.is-pos { color: #4ade80; }
+        .pos-val.is-neg { color: #f87171; }
+        .pos-share {
+            width: 100%; padding: 8px;
+            border-radius: 8px; cursor: pointer;
+            background: rgba(96,165,250,0.12);
+            border: 1px solid rgba(96,165,250,0.3);
+            color: #93c5fd;
+            font-size: 12px; font-weight: 600;
+            font-family: inherit;
+        }
+        .pos-share:hover { background: rgba(96,165,250,0.2); }
+        .pos-share:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .trade-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+        .trade-toggle button {
+            flex: 1; padding: 8px 0; border-radius: 8px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            color: inherit; cursor: pointer; font-size: 12px; font-weight: 600;
+        }
+        .trade-toggle button.is-active.buy { background: rgba(74,222,128,0.18); border-color: rgba(74,222,128,0.4); color: #4ade80; }
+        .trade-toggle button.is-active.sell { background: rgba(248,113,113,0.18); border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+        .amount-input {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 12px; border-radius: 8px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .amount-input input {
+            flex: 1; background: transparent; border: 0; color: inherit; outline: none;
+            font-size: 14px; font-variant-numeric: tabular-nums; min-width: 0;
+        }
+        .amount-input .ai-suffix { font-size: 12px; opacity: 0.55; }
+
+        .trade-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 12px; }
+        .trade-presets button {
+            padding: 7px 0; border-radius: 6px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            color: inherit; cursor: pointer; font-size: 11px;
+        }
+        .trade-presets button:hover { background: rgba(255,255,255,0.1); }
+
+        .trade-submit {
+            width: 100%; padding: 11px;
+            border-radius: 8px; border: 0; cursor: pointer;
+            font-size: 14px; font-weight: 700;
+        }
+        .trade-submit.buy { background: #16a34a; color: #fff; }
+        .trade-submit.buy:hover { background: #15803d; }
+        .trade-submit.sell { background: #dc2626; color: #fff; }
+        .trade-submit.sell:hover { background: #b91c1c; }
+
+        .tx-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 10px;
+        }
+        .tx-filter {
+            margin-left: auto;
+            display: flex; gap: 2px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            padding: 2px;
+        }
+        .tx-tab {
+            background: transparent; border: 0;
+            color: inherit; cursor: pointer;
+            padding: 4px 10px; font-size: 11px;
+            border-radius: 4px; opacity: 0.65;
+            font-family: inherit;
+        }
+        .tx-tab.is-active {
+            background: rgba(255,255,255,0.1);
+            opacity: 1; font-weight: 600;
+        }
+        .tx-devtoggle {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 11px; opacity: 0.7; cursor: pointer;
+            padding: 0 4px;
+        }
+        .tx-devtoggle input { accent-color: #93c5fd; margin: 0; }
+        .tx-row.is-dev .tx-wallet::after {
+            content: 'DEV'; display: inline-block;
+            margin-left: 4px; padding: 1px 4px;
+            font-size: 9px; font-weight: 700;
+            background: rgba(251,191,36,0.18); color: #fbbf24;
+            border-radius: 3px;
+        }
+
+        .tx-list {
+            flex: 1; overflow-y: auto; font-size: 11px;
+            scrollbar-width: none;
+        }
+        .tx-list::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .tx-row {
+            display: grid;
+            grid-template-columns: 64px 1fr auto 28px;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 8px;
+            font-variant-numeric: tabular-nums;
+            font-size: 11.5px;
+        }
+        .tx-row.buy  { background: rgba(16,185,129,0.09); }
+        .tx-row.sell { background: rgba(239,68,68,0.09); }
+        .tx-row + .tx-row { margin-top: 1px; }
+        .tx-sol { font-weight: 600; text-align: left; }
+        .tx-row.buy  .tx-sol { color: #34d399; }
+        .tx-row.sell .tx-sol { color: #f87171; }
+        .tx-mc {
+            opacity: 0.85; font-weight: 500;
+            text-align: left;
+        }
+        .tx-trader {
+            display: flex; align-items: center; gap: 3px;
+            justify-content: flex-end;
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 11px; opacity: 0.9;
+        }
+        .tx-trader .tx-badge {
+            font-size: 9px; opacity: 0.6;
+        }
+        .tx-age {
+            text-align: right;
+            opacity: 0.55; font-size: 10.5px;
+        }
+        .tx-row.is-mine { outline: 1px solid rgba(96,165,250,0.35); outline-offset: -1px; }
+        .tx-row.is-mine .tx-trader { color: #93c5fd; font-weight: 600; opacity: 1; }
+        .tx-row.is-dev .tx-trader::after {
+            content: 'DEV'; margin-left: 4px; padding: 1px 4px;
+            font-size: 9px; font-weight: 700;
+            background: rgba(251,191,36,0.18); color: #fbbf24; border-radius: 3px;
+        }
+        .tx-empty { padding: 14px 0; opacity: 0.4; font-size: 12px; text-align: center; }
+
+        /* ===== Toasts + positions popover ===== */
+        .toast-stack {
+            position: fixed; top: 20px; right: 20px;
+            display: flex; flex-direction: column; gap: 8px;
+            /* Above portfolio modal (4000) and PnL preview modal (15000) */
+            z-index: 25000;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(20,20,24,0.96); color: #fff;
+            padding: 10px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 13px; min-width: 220px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            animation: toast-in 180ms ease-out;
+        }
+        .toast.is-pos { border-color: rgba(74,222,128,0.4); }
+        .toast.is-neg { border-color: rgba(248,113,113,0.4); }
+        .toast.is-err { border-color: rgba(248,113,113,0.6); background: rgba(40,20,20,0.96); }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Demo portfolio: centered modal (not full-screen) */
+        .portfolio-modal-root[hidden] { display: none !important; }
+        .portfolio-modal-root:not([hidden]) {
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: max(16px, env(safe-area-inset-bottom));
+            box-sizing: border-box;
+        }
+        .portfolio-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(4,4,8,0.72);
+            backdrop-filter: blur(10px);
+            border: 0;
+            cursor: pointer;
+        }
+        .portfolio-modal-dialog {
+            position: relative;
+            z-index: 1;
+            width: min(960px, calc(100vw - 48px));
+            max-width: 96vw;
+            min-height: min(520px, 70vh);
+            max-height: min(92vh, 920px);
+            background: rgba(14,14,20,0.98);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            box-shadow: 0 28px 80px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .portfolio-modal-dialog header {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 15px;
+            font-weight: 600;
+            flex: 0 0 auto;
+        }
+        .portfolio-modal-dialog header button {
+            margin-left: auto;
+            background: transparent;
+            border: 0;
+            color: inherit;
+            cursor: pointer;
+            opacity: 0.65;
+            font-size: 20px;
+            line-height: 1;
+            padding: 4px 8px;
+        }
+        .portfolio-modal-dialog .demo-portfolio-scroll {
+            padding: 12px 16px 16px;
+        }
+        .portfolio-modal-dialog .portfolio-history-list { max-height: min(420px, 42vh) !important; }
+        .demo-portfolio-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .demo-portfolio-summary {
+            padding: 0 0 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        /* Portfolio balance hero — purple accent (matches chart/tool UI), subtle depth */
+        .portfolio-balance-hero {
+            border-radius: 14px;
+            padding: 22px 24px 20px;
+            background: linear-gradient(145deg, #4f46e5 0%, #5b21b6 48%, #6d28d9 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 20px rgba(15, 10, 40, 0.35);
+            text-align: left;
+        }
+        .portfolio-hero-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 8px;
+        }
+        .portfolio-hero-usd {
+            font-size: clamp(2.25rem, 6vw, 3.35rem);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: #f8fafc;
+            font-variant-numeric: tabular-nums;
+        }
+        .portfolio-hero-sol {
+            margin-top: 6px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.88);
+            font-variant-numeric: tabular-nums;
+        }
+        .portfolio-hero-hint {
+            margin-top: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .demo-portfolio-stats-secondary {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 4px 4px 0;
+        }
+        .demo-portfolio-stats-secondary .demo-portfolio-summary-row {
+            font-size: 18px;
+        }
+        .demo-portfolio-stats-secondary .demo-portfolio-label {
+            font-size: 12px;
+            opacity: 0.55;
+        }
+        .demo-portfolio-stats-secondary .demo-portfolio-value {
+            font-size: 19px;
+            font-weight: 700;
+        }
+        .demo-portfolio-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 14px;
+        }
+        .demo-portfolio-label {
+            opacity: 0.5;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .demo-portfolio-value { font-variant-numeric: tabular-nums; font-weight: 600; }
+        #portfolio-pnl-summary.is-pos { color: #4ade80; }
+        #portfolio-pnl-summary.is-neg { color: #f87171; }
+        #portfolio-pnl-7d-summary.is-pos { color: #4ade80; }
+        #portfolio-pnl-7d-summary.is-neg { color: #f87171; }
+        #portfolio-hitrate-summary.is-pos { color: #4ade80; }
+        #portfolio-hitrate-summary.is-neg { color: #f87171; }
+        .portfolio-7d-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .portfolio-share-7d-btn {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(129, 140, 248, 0.45);
+            background: rgba(79, 70, 229, 0.35);
+            color: #e8e8f0;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .portfolio-share-7d-btn:hover { background: rgba(99, 102, 241, 0.45); }
+        .demo-portfolio-summary-row--7d .portfolio-7d-actions {
+            min-width: 0;
+        }
+        .demo-portfolio-section-title {
+            margin: 12px 14px 6px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            opacity: 0.45;
+            font-weight: 600;
+        }
+        .positions-list { overflow: visible; flex: 0 0 auto; }
+        .portfolio-history-list {
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 0 8px 12px;
+            flex: 0 0 auto;
+        }
+        .portfolio-hist-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+        }
+        .portfolio-hist-row .ph-main { min-width: 0; line-height: 1.4; }
+        .portfolio-hist-row .ph-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .portfolio-hist-pnl-card {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(129, 140, 248, 0.45);
+            background: rgba(79, 70, 229, 0.35);
+            color: #e8e8f0;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .portfolio-hist-pnl-card:hover {
+            background: rgba(99, 102, 241, 0.45);
+        }
+        .portfolio-hist-row .ph-age { opacity: 0.5; font-size: 10.5px; white-space: nowrap; }
+        .portfolio-hist-row .ph-pnl { font-variant-numeric: tabular-nums; font-weight: 600; margin-left: 6px; }
+        .portfolio-hist-row .ph-pnl.is-pos { color: #4ade80; }
+        .portfolio-hist-row .ph-pnl.is-neg { color: #f87171; }
+        .position-item {
+            display: grid; grid-template-columns: 1fr auto; gap: 4px 8px;
+            padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px; cursor: pointer;
+        }
+        .position-item:hover { background: rgba(255,255,255,0.04); }
+        .position-item .pi-sym { font-weight: 600; }
+        .position-item .pi-pnl { font-variant-numeric: tabular-nums; font-weight: 600; }
+        .position-item .pi-pnl.is-pos { color: #4ade80; }
+        .position-item .pi-pnl.is-neg { color: #f87171; }
+        .position-item .pi-meta { font-size: 11px; opacity: 0.55; grid-column: 1 / 3; }
+
+        /** ?chartonly=1 — only the embedded chart (no Lykeion chrome). */
+        body.page-demo-trading.term-chart-only .cursor-glow,
+        body.page-demo-trading.term-chart-only .background-pattern,
+        body.page-demo-trading.term-chart-only .navbar,
+        body.page-demo-trading.term-chart-only .ticker-strip,
+        body.page-demo-trading.term-chart-only .mobile-terminal-tabs,
+        body.page-demo-trading.term-chart-only #toast-stack {
+            display: none !important;
+        }
+        /* Keep floating back visible in chart-only embed */
+        body.page-demo-trading.term-chart-only .terminal-fab-back { z-index: 6000; }
+        body.page-demo-trading.term-chart-only .term-main {
+            display: block;
+            padding: 0;
+            min-height: 100vh;
+            max-width: none;
+        }
+        body.page-demo-trading.term-chart-only .term-main > .term-col.term-right {
+            display: none !important;
+        }
+        body.page-demo-trading.term-chart-only .term-col.term-center {
+            min-height: 100vh;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #000 !important;
+        }
+        body.page-demo-trading.term-chart-only .term-chart-wrap {
+            min-height: 100vh;
+            border-radius: 0;
+        }
+        body.page-demo-trading.term-chart-only .term-chart-inner {
+            min-height: calc(100vh - 0px);
+        }
+        body.page-demo-trading.term-chart-only #term-chart.term-chart--gt {
+            min-height: calc(100vh - 0px);
+        }
+
+        /* ===== Mobile (Chart | Trades tabs, edge-to-edge stack) ===== */
+        @media (max-width: 1000px) {
+            body.page-demo-trading { height: auto; min-height: 100vh; }
+            /*
+             * Centered title: three-column grid. Base .nav-spacer used width:0 — without resetting it here,
+             * only logo + nav-right participated and the logo sat in the wide left column (off-center).
+             */
+            body.page-demo-trading .navbar {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                align-items: center;
+                column-gap: 10px;
+                padding: max(10px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) 12px max(14px, env(safe-area-inset-left, 0px));
+                min-height: 48px;
+            }
+            body.page-demo-trading .nav-spacer {
+                display: block !important;
+                grid-column: 1;
+                width: 100% !important;
+                min-width: 0 !important;
+                flex: initial !important;
+                min-height: 1px;
+                visibility: hidden;
+            }
+            body.page-demo-trading .nav-logo {
+                grid-column: 2;
+                justify-self: center;
+                font-size: 20px;
+                white-space: nowrap;
+            }
+            body.page-demo-trading .nav-right {
+                grid-column: 3;
+                justify-self: end;
+                justify-content: flex-end;
+                margin-left: 0;
+                min-width: 0;
+            }
+            body.page-demo-trading .wallet-hud {
+                padding: 7px 10px;
+                font-size: 12px;
+            }
+            body.page-demo-trading .nav-right .x-icon {
+                width: 20px;
+                height: 20px;
+            }
+            body.page-demo-trading .terminal-fab-back {
+                bottom: max(46px, calc(30px + env(safe-area-inset-bottom, 0px)));
+                right: max(16px, env(safe-area-inset-right, 0px));
+            }
+            .term-main {
+                display: flex;
+                flex-direction: column;
+                grid-template-columns: unset;
+                overflow: visible;
+                /* Room for fixed .terminal-fab-back so trade chips aren’t under it */
+                padding: 0 0 max(88px, calc(72px + env(safe-area-inset-bottom, 0px)));
+                gap: 0;
+                min-height: 0;
+            }
+            .ticker-strip {
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 6px 10px;
+                padding: 9px 10px;
+                border-radius: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                background: #08080c;
+            }
+            .ticker-strip::-webkit-scrollbar { display: none; height: 0; }
+            .ticker-strip .t-icon { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 8px; }
+            .ticker-strip .t-title {
+                flex: 0 1 auto;
+                min-width: 0;
+                max-width: none;
+                flex-direction: row;
+                align-items: baseline;
+                flex-wrap: nowrap;
+                gap: 5px;
+            }
+            .ticker-strip .t-ticker { font-size: 14px; white-space: nowrap; font-weight: 700; letter-spacing: -0.02em; }
+            .ticker-strip .t-name {
+                font-size: 10px;
+                opacity: 0.5;
+                max-width: 22vw;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .ticker-stats {
+                flex-wrap: nowrap;
+                gap: 6px 10px;
+                flex: 1 1 auto;
+                min-width: min-content;
+            }
+            .ticker-stats .stat {
+                min-width: 0;
+                padding: 3px 0;
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+                padding-left: 8px;
+                margin-left: 2px;
+            }
+            .ticker-stats .stat:first-of-type { border-left: 0; margin-left: 0; padding-left: 0; }
+            .ticker-stats .stat-label { font-size: 7px; letter-spacing: 0.4px; opacity: 0.42; }
+            .ticker-stats .stat-mc .stat-value { font-size: 14px; font-weight: 700; }
+            .ticker-stats .stat-vol .stat-value,
+            .ticker-stats .stat-liq .stat-value { font-size: 11px; font-weight: 600; opacity: 0.92; }
+            .ticker-links {
+                margin-left: 0;
+                flex: 0 0 auto;
+                flex-wrap: nowrap;
+                gap: 4px;
+            }
+            .ticker-links a {
+                padding: 5px 8px;
+                font-size: 9px;
+                white-space: nowrap;
+                border-radius: 6px;
+            }
+            .term-col.term-center,
+            .term-col.term-right {
+                display: contents;
+            }
+            .ticker-strip { order: 1; }
+            .mobile-terminal-tabs {
+                order: 2;
+                display: flex;
+                flex-direction: row;
+                align-items: stretch;
+                gap: 0;
+                margin: 0;
+                padding: 0;
+                background: #08080c;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .mobile-term-tab {
+                flex: 1;
+                margin: 0;
+                padding: 11px 12px;
+                border: 0;
+                border-bottom: 2px solid transparent;
+                background: transparent;
+                color: rgba(230, 230, 234, 0.45);
+                font: inherit;
+                font-size: 15px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+            }
+            .mobile-term-tab.is-active {
+                color: #f4f4f8;
+                border-bottom-color: rgba(255, 255, 255, 0.85);
+                background: rgba(255, 255, 255, 0.04);
+            }
+            .mobile-term-tab:active {
+                background: rgba(255, 255, 255, 0.06);
+            }
+            .term-chart-row {
+                order: 3;
+                flex-direction: column;
+                align-items: stretch;
+                min-height: 260px;
+                margin: 0;
+            }
+            .term-chart-row .term-chart-wrap {
+                min-height: 260px;
+                flex: 1;
+                min-width: 0;
+                border-radius: 0;
+            }
+            .term-chart-wrap--gt #term-chart.term-chart--gt {
+                border-radius: 0 !important;
+                min-height: 260px;
+            }
+            .term-chart-wrap--tv .term-chart-inner {
+                min-height: 260px;
+            }
+            #term-tx-card {
+                order: 3;
+                flex: 0 0 auto;
+                display: none !important;
+                flex-direction: column;
+                min-height: min(52vh, 420px);
+                max-height: min(58vh, 520px);
+                overflow: hidden;
+                transition: none;
+                border-radius: 0;
+                border-left: 0 !important;
+                border-right: 0 !important;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            #term-tx-card .tx-list {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                max-height: none;
+            }
+            body.mobile-term-view-trades #term-tx-card {
+                display: flex !important;
+            }
+            body.mobile-term-view-trades .term-chart-row {
+                display: none !important;
+            }
+            #term-position {
+                order: 4;
+                margin-top: 8px;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+                padding: 8px 12px 6px !important;
+            }
+            #term-trade-card {
+                order: 5;
+                margin-top: 0;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+                padding: 6px 12px 10px !important;
+            }
+            #term-trade-card > h4 {
+                margin: 0 0 6px;
+            }
+            .pos-mobile-summary {
+                display: flex;
+                padding-bottom: 2px;
+                margin-bottom: 0;
+            }
+            .pos-cells {
+                display: none !important;
+            }
+            /* Share PnL card — same action as desktop; full-width tap target */
+            #term-position .pos-share {
+                display: flex !important;
+                width: 100%;
+                box-sizing: border-box;
+                margin-top: 10px;
+                padding: 11px 14px;
+                font-size: 13px;
+                font-weight: 700;
+                border-radius: 10px;
+                justify-content: center;
+                align-items: center;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            .pos-strip {
+                padding: 0 !important;
+            }
+            .pos-val { font-size: 11px; }
+            .mobile-quick-trade {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 4px;
+            }
+            .mqt-mode-toggle {
+                display: flex;
+                gap: 8px;
+                padding: 2px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .mqt-mode {
+                flex: 1;
+                margin: 0;
+                padding: 10px 8px;
+                border: 0;
+                border-radius: 8px;
+                background: transparent;
+                color: rgba(230, 230, 234, 0.5);
+                font: inherit;
+                font-size: 14px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .mqt-mode.is-active[data-mqt-mode="buy"] {
+                background: rgba(22, 163, 74, 0.22);
+                color: #86efac;
+                box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.45);
+            }
+            .mqt-mode.is-active[data-mqt-mode="sell"] {
+                background: rgba(220, 38, 38, 0.2);
+                color: #fca5a5;
+                box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.45);
+            }
+            .mqt-preset-rows { min-height: 44px; }
+            .mqt-row {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 6px;
+            }
+            /* [hidden] must win over display:grid — otherwise both buy/sell rows show */
+            .mqt-row[hidden] {
+                display: none !important;
+            }
+            .mqt-chip {
+                margin: 0;
+                padding: 10px 4px;
+                border-radius: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.04);
+                color: #e8e8ed;
+                font: inherit;
+                font-size: 12px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                cursor: pointer;
+                transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+            }
+            .mqt-chip:active { transform: scale(0.97); }
+            .mqt-chip--buy {
+                border-color: rgba(74, 222, 128, 0.35);
+                background: rgba(22, 163, 74, 0.12);
+                color: #bbf7d0;
+            }
+            .mqt-chip--buy:active { background: rgba(22, 163, 74, 0.28); }
+            .mqt-chip--sell {
+                border-color: rgba(248, 113, 113, 0.35);
+                background: rgba(220, 38, 38, 0.1);
+                color: #fecaca;
+            }
+            .mqt-chip--sell:active { background: rgba(220, 38, 38, 0.24); }
+            .trade-advanced {
+                display: none;
+            }
+            /* Portfolio modal: keep 7-day Share + per-trade PnL card tappable on narrow widths */
+            .portfolio-modal-dialog .demo-portfolio-summary-row--7d {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .portfolio-modal-dialog .demo-portfolio-summary-row--7d .portfolio-7d-actions {
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .portfolio-modal-dialog .portfolio-share-7d-btn {
+                flex: 1 1 140px;
+                min-height: 42px;
+                text-align: center;
+                align-self: stretch;
+            }
+            .portfolio-modal-dialog .portfolio-hist-row {
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+            .portfolio-modal-dialog .portfolio-hist-row .ph-right {
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100%;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+            .portfolio-modal-dialog .portfolio-hist-pnl-card {
+                touch-action: manipulation;
+                min-height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 12px;
+            }
+            .portfolio-modal-dialog {
+                width: calc(100vw - 28px);
+                min-height: 0;
+                max-height: 92vh;
+            }
+        }
+    </style>
+</head>
+<body class="page-demo-trading">
+    <div class="cursor-glow"></div>
+    <div class="background-pattern"></div>
+
+    <nav class="navbar">
+        <div class="nav-spacer" aria-hidden="true"></div>
+        <a href="demo-trading.html" class="nav-logo">Lykeion</a>
+        <div class="nav-right">
+            <button type="button" class="wallet-hud wallet-hud--trigger" id="wallet-hud-trigger" aria-expanded="false" aria-controls="positions-panel" title="Demo portfolio">
+                <span class="wh-bal" id="wh-bal">5.000 SOL</span>
+            </button>
+            <a href="https://x.com/_ppotat0"><img src="../assets/icons/icons8-x-50.png" alt="X" class="x-icon"></a>
+        </div>
+    </nav>
+
+    <button type="button" class="terminal-fab-back" id="terminal-back-btn" title="Back" aria-label="Back">←</button>
+
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <div class="portfolio-modal-root" id="positions-panel" hidden>
+        <button type="button" class="portfolio-modal-backdrop" id="portfolio-modal-backdrop" aria-label="Close portfolio"></button>
+        <div class="portfolio-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="portfolio-modal-title">
+            <header>
+                <span id="portfolio-modal-title">Demo portfolio</span>
+                <button type="button" id="positions-close" aria-label="Close">×</button>
+            </header>
+            <div class="demo-portfolio-scroll">
+                <div class="demo-portfolio-summary">
+                    <div class="portfolio-balance-hero">
+                        <div class="portfolio-hero-label">Portfolio</div>
+                        <div class="portfolio-hero-usd" id="portfolio-bal-usd">$0.00</div>
+                        <div class="portfolio-hero-sol" id="portfolio-bal-summary">0.000000 SOL</div>
+                        <div class="portfolio-hero-hint">Demo balance · USD ≈ spot SOL</div>
+                    </div>
+                    <div class="demo-portfolio-stats-secondary">
+                        <div class="demo-portfolio-summary-row">
+                            <span class="demo-portfolio-label">Wallet PnL</span>
+                            <span class="demo-portfolio-value" id="portfolio-pnl-summary">+0.000 SOL</span>
+                        </div>
+                        <div class="demo-portfolio-summary-row">
+                            <span class="demo-portfolio-label">Hit rate</span>
+                            <span class="demo-portfolio-value" id="portfolio-hitrate-summary">—</span>
+                        </div>
+                        <div class="demo-portfolio-summary-row demo-portfolio-summary-row--7d">
+                            <span class="demo-portfolio-label">7-day PnL</span>
+                            <div class="portfolio-7d-actions">
+                                <span class="demo-portfolio-value" id="portfolio-pnl-7d-summary">—</span>
+                                <button type="button" class="portfolio-share-7d-btn" id="portfolio-share-7d-btn" title="Generate share card with 7-day realized PnL">Share card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h5 class="demo-portfolio-section-title">Open positions</h5>
+                <div class="positions-list" id="positions-list"></div>
+                <h5 class="demo-portfolio-section-title">Your top trades</h5>
+                <div class="portfolio-history-list" id="portfolio-history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <main class="term-main">
+        <section class="term-col term-center">
+            <section class="ticker-strip">
+                <img class="t-icon" id="term-icon" alt="" />
+                <div class="t-title">
+                    <span class="t-ticker" id="term-ticker">$TKN</span>
+                    <span class="t-name" id="term-name">tokenname</span>
+                </div>
+                <div class="ticker-stats">
+                    <div class="stat stat-mc">
+                        <span class="stat-label">MC</span>
+                        <span class="stat-value" id="term-mc">—</span>
+                    </div>
+                    <div class="stat stat-vol">
+                        <span class="stat-label">V 24h</span>
+                        <span class="stat-value" id="term-vol">—</span>
+                    </div>
+                    <div class="stat stat-liq">
+                        <span class="stat-label">Liquidity</span>
+                        <span class="stat-value" id="term-liq">—</span>
+                    </div>
+                </div>
+                <div class="ticker-links" id="term-links"></div>
+            </section>
+            <div class="mobile-terminal-tabs" role="tablist" aria-label="Chart or token trades">
+                <button type="button" class="mobile-term-tab is-active" id="mobile-tab-chart" role="tab" aria-selected="true" aria-controls="term-chart-panel">Chart</button>
+                <button type="button" class="mobile-term-tab" id="mobile-tab-trades" role="tab" aria-selected="false" aria-controls="term-tx-card">Trades</button>
+            </div>
+            <div class="term-chart-row" id="term-chart-panel">
+            <div class="term-chart-wrap">
+                <div class="term-chart-toolbar" role="toolbar" aria-label="Chart options">
+                    <div class="chart-toolbar-group">
+                        <span class="chart-toolbar-label">Interval</span>
+                        <div class="chart-toolbar-btns" id="chart-interval-btns"></div>
+                    </div>
+                    <div class="chart-toolbar-group">
+                        <span class="chart-toolbar-label">Scale</span>
+                        <div class="chart-toolbar-btns" id="chart-scale-btns"></div>
+                    </div>
+                    <div class="chart-toolbar-group">
+                        <span class="chart-toolbar-label">Style</span>
+                        <div class="chart-toolbar-btns" id="chart-style-btns"></div>
+                    </div>
+                    <button type="button" class="chart-toolbar-fit" id="chart-fit-btn" title="Reset zoom: fit time range and MCap/price scale">Fit</button>
+                </div>
+                <div class="term-chart-inner">
+                    <div id="term-chart" role="img" aria-label="Price chart"></div>
+                    <div class="chart-ohlc-legend" id="chart-ohlc-legend" hidden></div>
+                    <div class="chart-float-toasts" id="chart-float-toasts" aria-live="polite"></div>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <aside class="term-col term-right">
+            <section class="term-card pos-strip" id="term-position">
+                <div class="pos-mobile-summary" aria-label="Position summary">
+                    <div class="pos-ms-block">
+                        <span class="pos-ms-label">Holding</span>
+                        <span class="pos-ms-val" id="pos-ms-holding">0.000 SOL</span>
+                    </div>
+                    <div class="pos-ms-block">
+                        <span class="pos-ms-label">Total PNL</span>
+                        <span class="pos-ms-val" id="pos-ms-total-pnl">0.000 SOL</span>
+                    </div>
+                </div>
+                <div class="pos-cells">
+                    <div class="pos-cell">
+                        <span class="pos-label">Invested</span>
+                        <span class="pos-val" id="pos-invested">0.000 SOL</span>
+                    </div>
+                    <div class="pos-cell">
+                        <span class="pos-label">Sold</span>
+                        <span class="pos-val" id="pos-sold">0.000 SOL</span>
+                    </div>
+                    <div class="pos-cell">
+                        <span class="pos-label">Holding</span>
+                        <span class="pos-val" id="pos-holding">0.000 SOL</span>
+                    </div>
+                    <div class="pos-cell">
+                        <span class="pos-label">PnL</span>
+                        <span class="pos-val" id="pos-pnl">0.000 SOL</span>
+                    </div>
+                </div>
+                <button type="button" class="pos-share" id="pos-share-btn">Share PnL</button>
+            </section>
+
+            <section class="term-card tx-card" id="term-tx-card">
+                <div class="tx-header">
+                    <h4 style="margin: 0;">Token transactions</h4>
+                    <div class="tx-filter" role="tablist">
+                        <button type="button" class="tx-tab is-active" data-tx-filter="all">All</button>
+                        <button type="button" class="tx-tab" data-tx-filter="mine">My trades</button>
+                    </div>
+                </div>
+                <div class="tx-list" id="term-tx-list"><div class="tx-empty">Loading trades…</div></div>
+            </section>
+
+            <section class="term-card" id="term-trade-card">
+                <h4>Trade (demo)</h4>
+                <div class="mobile-quick-trade" id="mobile-quick-trade" role="group" aria-label="Quick trade">
+                    <div class="mqt-mode-toggle" role="tablist" aria-label="Buy or sell presets">
+                        <button type="button" class="mqt-mode is-active" id="mqt-mode-buy" role="tab" aria-selected="true" data-mqt-mode="buy">Buy</button>
+                        <button type="button" class="mqt-mode" id="mqt-mode-sell" role="tab" aria-selected="false" data-mqt-mode="sell">Sell</button>
+                    </div>
+                    <div class="mqt-preset-rows">
+                        <div class="mqt-row mqt-row--buy" id="mqt-row-buy" role="group" aria-label="Buy amounts in SOL">
+                            <button type="button" class="mqt-chip mqt-chip--buy" data-mqt-buy="0.05">0.05</button>
+                            <button type="button" class="mqt-chip mqt-chip--buy" data-mqt-buy="0.1">0.1</button>
+                            <button type="button" class="mqt-chip mqt-chip--buy" data-mqt-buy="0.25">0.25</button>
+                            <button type="button" class="mqt-chip mqt-chip--buy" data-mqt-buy="0.5">0.5</button>
+                            <button type="button" class="mqt-chip mqt-chip--buy" data-mqt-buy="1">1</button>
+                        </div>
+                        <div class="mqt-row mqt-row--sell" id="mqt-row-sell" role="group" aria-label="Sell fraction of position" hidden>
+                            <button type="button" class="mqt-chip mqt-chip--sell" data-mqt-sell="0.1">10%</button>
+                            <button type="button" class="mqt-chip mqt-chip--sell" data-mqt-sell="0.25">25%</button>
+                            <button type="button" class="mqt-chip mqt-chip--sell" data-mqt-sell="0.33">33%</button>
+                            <button type="button" class="mqt-chip mqt-chip--sell" data-mqt-sell="0.5">50%</button>
+                            <button type="button" class="mqt-chip mqt-chip--sell" data-mqt-sell="1">100%</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="trade-advanced">
+                <div class="trade-toggle">
+                    <button type="button" class="buy is-active" data-side="buy">Buy</button>
+                    <button type="button" class="sell" data-side="sell">Sell</button>
+                </div>
+                <div class="amount-input">
+                    <input type="number" id="term-amount" min="0" step="0.001" placeholder="0.0" />
+                    <span class="ai-suffix" id="term-amount-suffix">SOL</span>
+                </div>
+                <div class="trade-presets" id="term-presets"></div>
+                <button class="trade-submit buy" id="term-submit" type="button">Buy</button>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <script src="../scripts/bootstrap-secrets.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="../scripts/cursor-utils.js"></script>
+    <script>
+        (() => {
+            const WALLET_KEY = 'lykeion.demoWallet.v1';
+            const WALLET_KEY_LEGACY = 'lyceum.demoWallet.v1';
+            const STARTING_SOL = 5;
+            /** Remaining cost basis below this ⇒ position is closed (stops 0.000 SOL ghost rows after sells). */
+            const MIN_OPEN_POSITION_SOL = 0.0005;
+            const PUMPPORTAL_WS_URL = 'wss://pumpportal.fun/api/data';
+            const _stSec = (typeof window !== 'undefined' && window.LYKEION_SECRETS) || {};
+            const SOLANA_TRACKER_API_KEY = String(_stSec.solanaTracker || '').trim();
+            const SOL_PRICE_URLS = [
+                'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd',
+                'https://lite-api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112',
+                'https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT'
+            ];
+            const SOL_PRICE_REFRESH_MS = 60 * 1000;
+            const GECKO_STATS_REFRESH_MS = 4 * 1000;
+            const DEX_SOCIALS_REFRESH_MS = 60 * 1000;
+            const GECKO_TERMINAL_API = 'https://api.geckoterminal.com/api/v2/networks/solana/tokens';
+            /**
+             * GeckoTerminal embed (CoinGecko) by Solana mint — official chart for DEX tokens.
+             * Set false + USE_TRADINGVIEW_DEFAULT_CHART true for Binance/CEX TradingView only.
+             */
+            const USE_GECKOTERMINAL_EMBED = true;
+            const USE_TRADINGVIEW_DEFAULT_CHART = false;
+            /** If both embed and TV are false, falls back to lightweight-charts + live MC/price data. */
+            /** Fallback when ticker is missing or not mappable to a TV pair. */
+            const TRADINGVIEW_DEFAULT_SYMBOL = 'BINANCE:SOLUSDT';
+            /** Last TradingView pair mounted (avoid duplicate remounts). */
+            let lastTradingViewMountedSymbol = '';
+
+            function normalizeTicker(raw) {
+                return String(raw || '')
+                    .replace(/^\$/, '')
+                    .trim()
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, '');
+            }
+
+            /** Map token ticker → TradingView symbol (Binance USDT spot). Unknown tickers still get a best-effort pair. */
+            function tradingViewSymbolFromTicker(raw) {
+                const t = normalizeTicker(raw);
+                if (t.length < 2 || t.length > 20 || t === 'TKN') return TRADINGVIEW_DEFAULT_SYMBOL;
+                if (t.endsWith('USDT')) return 'BINANCE:' + t;
+                return 'BINANCE:' + t + 'USDT';
+            }
+
+            function mountTradingViewWidget(tvSymbol) {
+                if (!chartEl || typeof TradingView === 'undefined') return;
+                lastTradingViewMountedSymbol = tvSymbol;
+                chartEl.innerHTML = '';
+                try {
+                    new TradingView.widget({
+                        autosize: true,
+                        symbol: tvSymbol,
+                        /** 15S = 15-second bars (numeric alone is minutes). */
+                        interval: '15S',
+                        timezone: 'Etc/UTC',
+                        theme: 'dark',
+                        style: '1',
+                        locale: 'en',
+                        toolbar_bg: '#131722',
+                        enable_publishing: false,
+                        allow_symbol_change: true,
+                        save_image: false,
+                        container_id: 'term-chart',
+                    });
+                } catch (e) {
+                    console.warn('[TradingView] widget failed', e);
+                    lastTradingViewMountedSymbol = '';
+                    chartEl.innerHTML = '<p style="padding:12px;color:#868993;font-size:13px;">Chart could not load. Check network or try disabling TradingView mode.</p>';
+                }
+                window.setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
+            }
+
+            function refreshTradingViewSymbolIfChanged() {
+                if (USE_GECKOTERMINAL_EMBED || !USE_TRADINGVIEW_DEFAULT_CHART) return;
+                if (typeof TradingView === 'undefined') return;
+                const sym = tradingViewSymbolFromTicker(token.symbol);
+                if (sym === lastTradingViewMountedSymbol) return;
+                mountTradingViewWidget(sym);
+            }
+
+            // ---- mint from hash ----
+            const rawHash = (window.location.hash || '').replace(/^#/, '');
+            let MINT = '';
+            try { MINT = decodeURIComponent(rawHash).trim(); } catch { MINT = rawHash.trim(); }
+            if (!MINT) {
+                window.location.replace('demo-trading.html');
+                return;
+            }
+
+            const qs = new URLSearchParams(window.location.search || '');
+            const chartOnly = false;
+            void qs;
+
+            // ---- utils ----
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+            function formatCompactNumber(value) {
+                const num = Number(value);
+                if (!Number.isFinite(num) || num <= 0) return 'N/A';
+                if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+                if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+                if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                return String(Math.round(num));
+            }
+            function ipfsToHttp(uri) {
+                if (!uri || typeof uri !== 'string') return '';
+                const trimmed = uri.trim();
+                if (!trimmed) return '';
+                if (trimmed.startsWith('ipfs://')) {
+                    const cid = trimmed.slice(7).replace(/^ipfs\//, '');
+                    return 'https://pump.mypinata.cloud/ipfs/' + cid;
+                }
+                if (/^https?:\/\/ipfs\.io\/ipfs\//i.test(trimmed)) {
+                    return trimmed.replace(/^https?:\/\/ipfs\.io\/ipfs\//i, 'https://pump.mypinata.cloud/ipfs/');
+                }
+                return trimmed;
+            }
+            function fmtSol(n) {
+                const v = Number(n) || 0;
+                const sign = v >= 0 ? '+' : '';
+                return sign + v.toFixed(3);
+            }
+            function fmtSolPlain(n) {
+                return (Number(n) || 0).toFixed(3) + ' SOL';
+            }
+            const PNL_HANDLE_KEY = 'lykeion.pnlHandle';
+            const PNL_HANDLE_MAX = 10;
+            function normalizePnlHandleInput(value) {
+                return String(value || '')
+                    .trim()
+                    .replace(/^@+/g, '')
+                    .slice(0, PNL_HANDLE_MAX);
+            }
+            /** One-time name for share cards. */
+            function getPnlCardDisplayName() {
+                const raw = localStorage.getItem(PNL_HANDLE_KEY);
+                const h = normalizePnlHandleInput(raw);
+                return h ? '@' + h : '';
+            }
+            /** One-time modal; resolves true when a handle is saved or already set, false on cancel. */
+            function ensurePnlHandleSet() {
+                const raw = localStorage.getItem(PNL_HANDLE_KEY);
+                if (raw !== null && normalizePnlHandleInput(raw) !== '') return Promise.resolve(true);
+                return new Promise((resolve) => {
+                    document.getElementById('pnl-handle-setup-modal')?.remove();
+                    const modal = document.createElement('div');
+                    modal.id = 'pnl-handle-setup-modal';
+                    modal.className = 'pnl-card-modal pnl-handle-setup-modal';
+                    modal.innerHTML = ''
+                        + '<div class="pnl-card-backdrop"></div>'
+                        + '<div class="pnl-card-dialog pnl-handle-dialog" role="dialog" aria-modal="true" aria-labelledby="pnl-handle-title">'
+                        +   '<h2 class="pnl-handle-title" id="pnl-handle-title">What should we call you?</h2>'
+                        +   '<p class="pnl-handle-hint">Pick a nickname for your cards. Max ' + PNL_HANDLE_MAX + ' characters.</p>'
+                        +   '<input type="text" class="pnl-handle-input" maxlength="' + PNL_HANDLE_MAX + '" autocomplete="nickname" spellcheck="false" placeholder="e.g. bobo12" />'
+                        +   '<div class="pnl-handle-actions">'
+                        +     '<button type="button" class="pnl-card-btn" data-pnl-handle-cancel>Cancel</button>'
+                        +     '<button type="button" class="pnl-card-btn is-primary" data-pnl-handle-save disabled>Continue</button>'
+                        +   '</div>'
+                        + '</div>';
+                    document.body.appendChild(modal);
+                    const input = modal.querySelector('.pnl-handle-input');
+                    const saveBtn = modal.querySelector('[data-pnl-handle-save]');
+                    const finish = (ok) => {
+                        modal.remove();
+                        resolve(ok);
+                    };
+                    const syncSave = () => {
+                        saveBtn.disabled = normalizePnlHandleInput(input.value) === '';
+                    };
+                    input.addEventListener('input', syncSave);
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !saveBtn.disabled) saveBtn.click();
+                    });
+                    modal.querySelector('[data-pnl-handle-cancel]').addEventListener('click', () => finish(false));
+                    modal.querySelector('.pnl-card-backdrop').addEventListener('click', () => finish(false));
+                    saveBtn.addEventListener('click', () => {
+                        const v = normalizePnlHandleInput(input.value);
+                        if (!v) return;
+                        try { localStorage.setItem(PNL_HANDLE_KEY, v); } catch (e) {}
+                        finish(true);
+                    });
+                    (typeof queueMicrotask === 'function' ? queueMicrotask : (fn) => setTimeout(fn, 0))(() => {
+                        input.focus();
+                        syncSave();
+                    });
+                });
+            }
+            function firstSocial(socials, type) {
+                if (!Array.isArray(socials)) return '';
+                const match = socials.find((s) => String(s?.type || '').toLowerCase() === type);
+                return match?.url || '';
+            }
+
+            // ---- wallet ----
+            function loadWallet() {
+                try {
+                    const raw = localStorage.getItem(WALLET_KEY) || localStorage.getItem(WALLET_KEY_LEGACY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed.balanceSol === 'number' && parsed.positions && typeof parsed.positions === 'object') {
+                            return parsed;
+                        }
+                    }
+                } catch {}
+                return { balanceSol: STARTING_SOL, realizedPnlSol: 0, positions: {}, history: [] };
+            }
+            function saveWallet() {
+                try { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); } catch {}
+            }
+            const wallet = loadWallet();
+
+            // ---- token state ----
+            let solPriceUsd = 170;
+            const token = {
+                mint: MINT,
+                symbol: 'TKN',
+                name: 'unnamed',
+                image_uri: '',
+                marketCapSol: 0,
+                volumeSol: 0,
+                mcUsdAuth: 0,
+                /** MC from latest live feed (tracker / WS / Gecko) — must track chart or holdings lag */
+                liveMcUsd: 0,
+                volUsdAuth: 0,
+                liquidityUsd: 0,
+                /** Last token price in USD (from Dex) — maps MC ↔ price on chart */
+                lastPriceUsd: 0,
+                twitter: '',
+                website: '',
+                telegram: '',
+                discord: '',
+                migrated: false
+            };
+
+            // pending snapshot
+            try {
+                const snapRaw = sessionStorage.getItem('lykeion.pendingTerminalSnap') || sessionStorage.getItem('lyceum.pendingTerminalSnap');
+                if (snapRaw) {
+                    sessionStorage.removeItem('lykeion.pendingTerminalSnap');
+                    sessionStorage.removeItem('lyceum.pendingTerminalSnap');
+                    const snap = JSON.parse(snapRaw);
+                    if (snap && snap.mint === MINT) {
+                        if (snap.symbol) token.symbol = snap.symbol;
+                        if (snap.name) token.name = snap.name;
+                        if (snap.image_uri) token.image_uri = snap.image_uri;
+                        if (snap.mcUsd > 0) {
+                            const m = Number(snap.mcUsd) || 0;
+                            token.mcUsdAuth = m;
+                            token.liveMcUsd = m;
+                        }
+                        if (snap.volUsd > 0) token.volUsdAuth = Number(snap.volUsd) || 0;
+                        if (snap.twitter) token.twitter = snap.twitter;
+                        if (snap.website) token.website = snap.website;
+                        if (snap.telegram) token.telegram = snap.telegram;
+                    }
+                }
+            } catch {}
+
+            // fallback from wallet position
+            const pos0 = wallet.positions[MINT];
+            if (pos0) {
+                if (!token.symbol || token.symbol === 'TKN') token.symbol = pos0.symbol || token.symbol;
+                if (!token.name || token.name === 'unnamed') token.name = pos0.name || token.name;
+                if (!token.image_uri && pos0.image_uri) token.image_uri = pos0.image_uri;
+            }
+
+            function computeUsdMc() {
+                const live = Number(token.liveMcUsd) || 0;
+                if (live > 0) return live;
+                const fromPump = (Number(token.marketCapSol) || 0) * solPriceUsd;
+                if (fromPump > 0) return fromPump;
+                if (token.mcUsdAuth > 0) return token.mcUsdAuth;
+                return 0;
+            }
+            function computeUsdVolume() {
+                if (token.volUsdAuth > 0) return token.volUsdAuth;
+                return (Number(token.volumeSol) || 0) * solPriceUsd;
+            }
+
+            // ---- DOM ----
+            const termIconEl = document.getElementById('term-icon');
+            const termTickerEl = document.getElementById('term-ticker');
+            const termNameEl = document.getElementById('term-name');
+            const termMcEl = document.getElementById('term-mc');
+            const termVolEl = document.getElementById('term-vol');
+            const termLiqEl = document.getElementById('term-liq');
+            const termLinksEl = document.getElementById('term-links');
+            const termPositionEl = document.getElementById('term-position');
+            const termAmountEl = document.getElementById('term-amount');
+            const termAmountSuffix = document.getElementById('term-amount-suffix');
+            const termPresetsEl = document.getElementById('term-presets');
+            const termSubmitEl = document.getElementById('term-submit');
+            const termTxListEl = document.getElementById('term-tx-list');
+            const toggleBtns = document.querySelectorAll('.trade-toggle button');
+            const whBalEl = document.getElementById('wh-bal');
+            const chartEl = document.getElementById('term-chart');
+            const chartFloatToastsEl = document.getElementById('chart-float-toasts');
+            const toastStack = document.getElementById('toast-stack');
+
+            // ---- lightweight-charts: pro DEX default = Market Cap (USD) scale (K/M); Price = token USD ----
+            const CHART_PREFS_KEY = 'lykeion.termChartPrefs.v1';
+            const CHART_INTERVALS = [
+                { sec: 5, label: '5s' },
+                { sec: 15, label: '15s' },
+                { sec: 60, label: '1m' },
+                { sec: 300, label: '5m' },
+                { sec: 900, label: '15m' },
+            ];
+            const CHART_SCALES = [
+                { id: 'mc', label: 'MCap' },
+                { id: 'price', label: 'Price' },
+            ];
+            const CHART_STYLES = [
+                { id: 'candles', label: 'Candles' },
+                { id: 'line', label: 'Line' },
+                { id: 'area', label: 'Area' },
+            ];
+            function loadChartPrefs() {
+                try {
+                    const j = JSON.parse(sessionStorage.getItem(CHART_PREFS_KEY) || sessionStorage.getItem('lyceum.termChartPrefs.v1') || '{}');
+                    const b = Number(j.bucket);
+                    const allowedB = CHART_INTERVALS.some((x) => x.sec === b);
+                    const st = String(j.style || 'candles');
+                    const allowedS = CHART_STYLES.some((x) => x.id === st);
+                    const ym = String(j.yMode || 'mc');
+                    const allowedY = CHART_SCALES.some((x) => x.id === ym);
+                    return {
+                        bucket: allowedB ? b : 15,
+                        style: allowedS ? st : 'candles',
+                        yMode: allowedY ? ym : 'mc',
+                    };
+                } catch {
+                    return { bucket: 15, style: 'candles', yMode: 'mc' };
+                }
+            }
+            function saveChartPrefs() {
+                try {
+                    sessionStorage.setItem(CHART_PREFS_KEY, JSON.stringify({
+                        bucket: chartBucketSec,
+                        style: chartStyle,
+                        yMode: chartYMode,
+                    }));
+                } catch {}
+            }
+
+            const prefs0 = loadChartPrefs();
+            let chartBucketSec = prefs0.bucket;
+            let chartStyle = prefs0.style;
+            let chartYMode = prefs0.yMode;
+            const LW = typeof LightweightCharts !== 'undefined' ? LightweightCharts : null;
+            let chart = null;
+            let candleSeries = null;
+            let lineSeries = null;
+            let areaSeries = null;
+            let seriesMain = null;
+            let priceLineEntry = null;
+            let priceLineExit = null;
+            const candleBuckets = new Map();
+            /** Each: { at, mcUsd, priceUsd } — legacy { at, y } treated as priceUsd only */
+            const rawChartPoints = [];
+            /** Avoid full setData on every live tick — that resets price-scale zoom while autoScale is on */
+            let seriesDataBarCount = 0;
+            let seriesDataLastTime = null;
+            /** Once the user pans/zooms/drags an axis, stop clobbering their view with fitContent/barSpacing resets */
+            let userInteractedChart = false;
+            let initialBarSpacingApplied = false;
+            function resetSeriesDataTracking() {
+                seriesDataBarCount = 0;
+                seriesDataLastTime = null;
+            }
+
+            function normalizeRawSample(p) {
+                if (!p || !p.at) return { at: 0, mcUsd: 0, priceUsd: 0 };
+                const mc = Number(p.mcUsd) || 0;
+                const px = Number(p.priceUsd) || 0;
+                if (mc > 0 || px > 0) return { at: p.at, mcUsd: mc, priceUsd: px };
+                const legacyY = Number(p.y) || 0;
+                if (legacyY > 0) return { at: p.at, mcUsd: 0, priceUsd: legacyY };
+                return { at: p.at, mcUsd: 0, priceUsd: 0 };
+            }
+
+            function recordRawSample(sample) {
+                const n = normalizeRawSample(sample);
+                if (!(n.mcUsd > 0) && !(n.priceUsd > 0)) return;
+                rawChartPoints.push(n);
+                const max = 8000;
+                if (rawChartPoints.length > max) rawChartPoints.splice(0, rawChartPoints.length - max);
+            }
+
+            function clampDisplayY(y) {
+                if (!Number.isFinite(y) || !(y > 0)) return y;
+                const ref = computeUsdMc();
+                if (!(ref > 0)) return y;
+                const ratio = y / ref;
+                if (chartYMode === 'mc') {
+                    if (ratio > 250 || ratio < 0.004) return ref;
+                } else {
+                    const lp = Number(token.lastPriceUsd) || 0;
+                    if (lp > 0) {
+                        const rp = y / lp;
+                        if (rp > 500 || rp < 0.002) return lp;
+                    }
+                }
+                return y;
+            }
+
+            function deriveYFromRaw(n) {
+                const refMc = computeUsdMc();
+                const refPx = Number(token.lastPriceUsd) || 0;
+                let mc = n.mcUsd > 0 ? n.mcUsd : 0;
+                let px = n.priceUsd > 0 ? n.priceUsd : 0;
+                if (!mc && px > 0 && refMc > 0 && refPx > 0) mc = (px / refPx) * refMc;
+                if (!px && mc > 0 && refMc > 0 && refPx > 0) px = (mc / refMc) * refPx;
+                if (chartYMode === 'mc') {
+                    return mc > 0 ? mc : 0;
+                }
+                return px > 0 ? px : mcUsdToChartPrice(mc);
+            }
+
+            function lineYFromMcUsd(mcVal) {
+                const v = Number(mcVal) || 0;
+                if (!(v > 0)) return 0;
+                if (chartYMode === 'mc') return v;
+                return mcUsdToChartPrice(v);
+            }
+
+            function formatAxisValue(v) {
+                const x = Number(v);
+                if (!Number.isFinite(x)) return '';
+                if (chartYMode === 'mc') {
+                    if (x >= 1e9) return Math.round(x / 1e9) + 'B';
+                    if (x >= 1e6) return Math.round(x / 1e6) + 'M';
+                    if (x >= 1e3) return Math.round(x / 1e3) + 'K';
+                    return String(Math.round(x));
+                }
+                if (x >= 1e9) return Math.round(x / 1e9) + 'B';
+                if (x >= 1e6) return Math.round(x / 1e6) + 'M';
+                if (x >= 1e3) return Math.round(x / 1e3) + 'K';
+                if (x >= 1) return x.toFixed(4);
+                if (x >= 0.0001) return x.toFixed(6);
+                return x.toExponential(2);
+            }
+
+            function applyChartAxisLocalization() {
+                if (!chart) return;
+                chart.applyOptions({
+                    localization: {
+                        priceFormatter: formatAxisValue,
+                    },
+                });
+            }
+
+            function bucketStartSec(atMs) {
+                const sec = Math.floor(atMs / 1000);
+                return Math.floor(sec / chartBucketSec) * chartBucketSec;
+            }
+
+            /** Map a trade timestamp to a bar time that exists in `candleBuckets` so markers are not dropped by lightweight-charts. */
+            function snapTradeTimeToSeriesBarSec(atMs) {
+                const want = bucketStartSec(Number(atMs) || Date.now());
+                if (candleBuckets.has(want)) return want;
+                const keys = Array.from(candleBuckets.keys());
+                if (!keys.length) return want;
+                keys.sort((a, b) => a - b);
+                let best = keys[0];
+                let bestD = Math.abs(best - want);
+                for (let i = 0; i < keys.length; i++) {
+                    const d = Math.abs(keys[i] - want);
+                    if (d < bestD) {
+                        bestD = d;
+                        best = keys[i];
+                    }
+                }
+                return best;
+            }
+
+            function chartBarSpacingForInterval(sec, barCount) {
+                const count = Math.max(1, Number(barCount) || 0);
+                const width = Math.max(320, chartEl?.clientWidth || 0);
+                const paddedCount = Math.max(count + 2, 12);
+                const fitSpacing = width / paddedCount;
+                const intervalCap = sec <= 5 ? 18 : sec <= 15 ? 16 : sec <= 60 ? 14 : sec <= 300 ? 10 : 8;
+                return Math.max(4, Math.min(intervalCap, fitSpacing));
+            }
+
+            function makeFlatBar(time, close) {
+                return { time, open: close, high: close, low: close, close };
+            }
+
+            function latestBucketBar() {
+                if (!candleBuckets.size) return null;
+                let latest = null;
+                candleBuckets.forEach((bar) => {
+                    if (!latest || bar.time > latest.time) latest = bar;
+                });
+                return latest;
+            }
+
+            function fillMissingBucketsUntil(targetTime) {
+                let lastBar = latestBucketBar();
+                if (!lastBar) return null;
+                while ((lastBar.time + chartBucketSec) < targetTime) {
+                    const nextBar = makeFlatBar(lastBar.time + chartBucketSec, lastBar.close);
+                    candleBuckets.set(nextBar.time, nextBar);
+                    lastBar = nextBar;
+                }
+                return lastBar;
+            }
+
+            function mcUsdFromTradePayload(t, fallbackMc) {
+                const fb = Number(fallbackMc) || 0;
+                const direct = Number(t.marketCap ?? t.marketCapUsd ?? t.mcUsd ?? t.usdMarketCap ?? t.marketcap ?? 0);
+                if (Number.isFinite(direct) && direct > 0) return direct;
+                const mcs = Number(t.marketCapSol ?? t.market_cap_sol ?? 0);
+                if (Number.isFinite(mcs) && mcs > 0 && solPriceUsd > 0) return mcs * solPriceUsd;
+                return fb > 0 ? fb : 0;
+            }
+
+            /** Y-axis = token price USD. Solana Tracker lists priceUsd; else volume/amount; else MC→price via Dex ref. */
+            function chartPriceUsdFromSolanaTrade(t) {
+                let p = Number(t.priceUsd ?? t.price ?? t.avgPriceUsd ?? t.usdPrice ?? 0);
+                if (Number.isFinite(p) && p > 0) return p;
+                const vol = Number(t.volume ?? 0);
+                const amt = Number(t.amount ?? 0);
+                if (Number.isFinite(vol) && vol > 0 && Number.isFinite(amt) && amt > 0) return vol / amt;
+                const mc = mcUsdFromTradePayload(t, 0);
+                const mcNow = computeUsdMc();
+                const refPx = Number(token.lastPriceUsd) || 0;
+                if (mc > 0 && mcNow > 0 && refPx > 0) return (mc / mcNow) * refPx;
+                return 0;
+            }
+
+            function chartPriceUsdFromPumpEvent(data, mcUsdFromSol) {
+                let p = Number(data.priceUsd ?? data.price ?? data.tokenPriceUsd ?? 0);
+                if (Number.isFinite(p) && p > 0) return p;
+                const tok = Number(data.tokenAmount ?? data.amount ?? data.token_amount ?? 0);
+                const solA = Number(data.solAmount ?? data.sol_amount ?? 0);
+                if (solA > 0 && tok > 0 && solPriceUsd > 0) return (solA * solPriceUsd) / tok;
+                const mc = Number(mcUsdFromSol) > 0 ? mcUsdFromSol : 0;
+                const mcNow = computeUsdMc();
+                const refPx = Number(token.lastPriceUsd) || 0;
+                if (mc > 0 && mcNow > 0 && refPx > 0) return (mc / mcNow) * refPx;
+                return 0;
+            }
+
+            function mcUsdToChartPrice(mcVal) {
+                const mc = computeUsdMc();
+                const refPx = Number(token.lastPriceUsd) || 0;
+                if (Number(mcVal) > 0 && mc > 0 && refPx > 0) return (Number(mcVal) / mc) * refPx;
+                return Number(mcVal) || 0;
+            }
+
+            function canIncrementalSeriesUpdate(sorted, last) {
+                if (!sorted.length || seriesDataBarCount <= 0 || seriesDataLastTime == null) return false;
+                if (sorted.length === seriesDataBarCount && last.time === seriesDataLastTime) return true;
+                if (sorted.length === seriesDataBarCount + 1 && last.time > seriesDataLastTime) return true;
+                return false;
+            }
+
+            function flushBucketsToMainSeries(fitContent) {
+                if (!seriesMain) return;
+                const sorted = Array.from(candleBuckets.values()).sort((a, b) => a.time - b.time);
+                if (!sorted.length) {
+                    resetSeriesDataTracking();
+                    if (chartStyle === 'candles' && candleSeries) candleSeries.setData([]);
+                    else seriesMain.setData([]);
+                    return;
+                }
+                const last = sorted[sorted.length - 1];
+                const incremental = !fitContent && canIncrementalSeriesUpdate(sorted, last);
+
+                if (chartStyle === 'candles' && candleSeries) {
+                    if (incremental) candleSeries.update(last);
+                    else candleSeries.setData(sorted);
+                } else {
+                    const pt = { time: last.time, value: last.close };
+                    if (incremental) seriesMain.update(pt);
+                    else seriesMain.setData(sorted.map((b) => ({ time: b.time, value: b.close })));
+                }
+                seriesDataBarCount = sorted.length;
+                seriesDataLastTime = last.time;
+                if (chart && !initialBarSpacingApplied && !userInteractedChart) {
+                    chart.applyOptions({
+                        timeScale: {
+                            barSpacing: chartBarSpacingForInterval(chartBucketSec, sorted.length),
+                            minBarSpacing: 2,
+                            rightOffset: 0,
+                        },
+                    });
+                    initialBarSpacingApplied = true;
+                }
+                if (fitContent && chart && sorted.length && !userInteractedChart) fitChartTimeAndPrice();
+            }
+
+            /** Fit X to candles and auto-range Y (MCap) so load matches DEX-style 4K–12K-style bands */
+            function fitChartTimeAndPrice() {
+                if (!chart) return;
+                if (userInteractedChart) return;
+                try {
+                    chart.timeScale().fitContent();
+                    const ps = chart.priceScale('right');
+                    ps.applyOptions({ autoScale: true });
+                    requestAnimationFrame(() => {
+                        try {
+                            chart?.priceScale('right').applyOptions({ autoScale: false, mode: 0 });
+                        } catch {}
+                    });
+                } catch {}
+            }
+
+            function disablePriceAutoScaleForManualYAxis() {
+                if (!chart) return;
+                try {
+                    chart.priceScale('right').applyOptions({ autoScale: false, mode: 0 });
+                } catch {}
+            }
+
+            function isWithinPriceScaleGrabZone(clientX) {
+                if (!chartEl) return false;
+                const rect = chartEl.getBoundingClientRect();
+                const grabWidth = Math.max(84, Math.round(rect.width * 0.08));
+                return clientX >= (rect.right - grabWidth);
+            }
+
+            function stripPriceLinesBeforeSeriesChange() {
+                if (priceLineEntry && seriesMain) {
+                    try { seriesMain.removePriceLine(priceLineEntry); } catch {}
+                    priceLineEntry = null;
+                }
+                if (priceLineExit && seriesMain) {
+                    try { seriesMain.removePriceLine(priceLineExit); } catch {}
+                    priceLineExit = null;
+                }
+            }
+
+            function disposeMainSeries() {
+                stripPriceLinesBeforeSeriesChange();
+                resetSeriesDataTracking();
+                if (!chart) return;
+                if (candleSeries) {
+                    try { chart.removeSeries(candleSeries); } catch {}
+                    candleSeries = null;
+                }
+                if (lineSeries) {
+                    try { chart.removeSeries(lineSeries); } catch {}
+                    lineSeries = null;
+                }
+                if (areaSeries) {
+                    try { chart.removeSeries(areaSeries); } catch {}
+                    areaSeries = null;
+                }
+                seriesMain = null;
+            }
+
+            function createMainSeriesForStyle(style) {
+                if (!LW || !chart) return;
+                disposeMainSeries();
+                chartStyle = style;
+                /** Whole-$1K steps so ticks read as 50K, 51K (not 52.66K repeated on every line) */
+                const pfMc = { type: 'price', precision: 0, minMove: 1000 };
+                const pfPx = { type: 'price', precision: 8, minMove: 0.00000001 };
+                const pf = chartYMode === 'mc' ? pfMc : pfPx;
+                if (style === 'line') {
+                    lineSeries = chart.addLineSeries({
+                        color: chartYMode === 'mc' ? '#26a69a' : '#2962FF',
+                        lineWidth: 2,
+                        priceLineVisible: true,
+                        lastValueVisible: true,
+                        priceFormat: pf,
+                    });
+                    seriesMain = lineSeries;
+                } else if (style === 'area') {
+                    areaSeries = chart.addAreaSeries({
+                        lineColor: '#26a69a',
+                        topColor: 'rgba(38, 166, 154, 0.28)',
+                        bottomColor: 'rgba(38, 166, 154, 0)',
+                        lineWidth: 2,
+                        priceLineVisible: true,
+                        priceFormat: pf,
+                    });
+                    seriesMain = areaSeries;
+                } else {
+                    candleSeries = chart.addCandlestickSeries({
+                        upColor: '#26a69a',
+                        downColor: '#ef5350',
+                        borderVisible: true,
+                        borderUpColor: '#26a69a',
+                        borderDownColor: '#ef5350',
+                        wickUpColor: '#26a69a',
+                        wickDownColor: '#ef5350',
+                        wickVisible: true,
+                        priceLineVisible: true,
+                        priceFormat: pf,
+                    });
+                    seriesMain = candleSeries;
+                }
+                applyChartAxisLocalization();
+                flushBucketsToMainSeries(false);
+                renderChartAnnotations();
+                saveChartPrefs();
+                syncChartToolbar();
+            }
+
+            function upsertChartSample(mcUsd, priceUsd, atMs) {
+                if (!seriesMain) return;
+                const refMc = computeUsdMc();
+                let mc = Number(mcUsd) > 0 ? mcUsd : 0;
+                let px = Number(priceUsd) > 0 ? priceUsd : 0;
+                const refPx = Number(token.lastPriceUsd) || 0;
+                if (!mc && px > 0 && refMc > 0 && refPx > 0) mc = (px / refPx) * refMc;
+                if (!px && mc > 0 && refMc > 0 && refPx > 0) px = (mc / refMc) * refPx;
+                if (!(mc > 0) && !(px > 0)) return;
+                recordRawSample({ at: atMs, mcUsd: mc, priceUsd: px });
+                const n = normalizeRawSample({ at: atMs, mcUsd: mc, priceUsd: px });
+                let y = deriveYFromRaw(n);
+                y = clampDisplayY(y);
+                if (!(y > 0)) return;
+                const t = bucketStartSec(atMs);
+                const lastBar = fillMissingBucketsUntil(t);
+                let bar = candleBuckets.get(t);
+                if (!bar) {
+                    const open = lastBar && lastBar.close > 0 ? lastBar.close : y;
+                    bar = { time: t, open, high: Math.max(open, y), low: Math.min(open, y), close: y };
+                    candleBuckets.set(t, bar);
+                } else {
+                    bar.high = Math.max(bar.high, y);
+                    bar.low = Math.min(bar.low, y);
+                    bar.close = y;
+                }
+                flushBucketsToMainSeries(false);
+            }
+
+            function rebuildAllBucketsFromRaw(fitContent) {
+                candleBuckets.clear();
+                const sorted = rawChartPoints.map(normalizeRawSample).sort((a, b) => a.at - b.at);
+                let lastY = 0;
+                let lastBucketTime = null;
+                for (const n of sorted) {
+                    let y = deriveYFromRaw(n);
+                    y = clampDisplayY(y);
+                    if (!(y > 0)) {
+                        y = lastY;
+                    }
+                    if (!(y > 0)) continue;
+                    const t = bucketStartSec(n.at);
+                    if (lastBucketTime != null && lastY > 0) {
+                        for (let fillTime = lastBucketTime + chartBucketSec; fillTime < t; fillTime += chartBucketSec) {
+                            candleBuckets.set(fillTime, makeFlatBar(fillTime, lastY));
+                            lastBucketTime = fillTime;
+                        }
+                    }
+                    let bar = candleBuckets.get(t);
+                    if (!bar) {
+                        const open = lastY > 0 ? lastY : y;
+                        bar = { time: t, open, high: Math.max(open, y), low: Math.min(open, y), close: y };
+                        candleBuckets.set(t, bar);
+                    } else {
+                        bar.high = Math.max(bar.high, y);
+                        bar.low = Math.min(bar.low, y);
+                        bar.close = y;
+                    }
+                    lastY = bar.close;
+                    lastBucketTime = t;
+                }
+                flushBucketsToMainSeries(!!fitContent);
+                renderChartAnnotations();
+            }
+
+            function applyChartInterval(sec) {
+                chartBucketSec = sec;
+                userInteractedChart = false;
+                initialBarSpacingApplied = false;
+                candleBuckets.clear();
+                rebuildAllBucketsFromRaw(true);
+                if (typeof seedHistoricalCandles === 'function') seedHistoricalCandles();
+                if (chart) {
+                    chart.applyOptions({
+                        timeScale: {
+                            barSpacing: chartBarSpacingForInterval(sec, candleBuckets.size || rawChartPoints.length || 48),
+                            minBarSpacing: 3,
+                            rightOffset: 0,
+                            secondsVisible: sec < 60,
+                        },
+                    });
+                }
+                saveChartPrefs();
+                syncChartToolbar();
+            }
+
+            function applyChartYMode(mode) {
+                if (mode !== 'mc' && mode !== 'price') return;
+                chartYMode = mode;
+                candleBuckets.clear();
+                rebuildAllBucketsFromRaw(true);
+                createMainSeriesForStyle(chartStyle);
+                saveChartPrefs();
+                syncChartToolbar();
+            }
+
+            function syncChartToolbar() {
+                document.querySelectorAll('#chart-interval-btns button').forEach((btn) => {
+                    btn.classList.toggle('is-active', Number(btn.getAttribute('data-sec')) === chartBucketSec);
+                });
+                document.querySelectorAll('#chart-scale-btns button').forEach((btn) => {
+                    btn.classList.toggle('is-active', btn.getAttribute('data-y-mode') === chartYMode);
+                });
+                document.querySelectorAll('#chart-style-btns button').forEach((btn) => {
+                    btn.classList.toggle('is-active', btn.getAttribute('data-style') === chartStyle);
+                });
+            }
+
+            /** GeckoTerminal chart-only embed — chart pane, no txn/swap table, no pair info header. */
+            function geckoTerminalEmbedUrl(mintOrPool, isPool) {
+                const q = new URLSearchParams({
+                    embed: '1',
+                    theme: 'dark',
+                    info: '0',
+                    trades: '0',
+                    swaps: '0',
+                    chart: '1',
+                    interval: '15s',
+                });
+                const base = isPool
+                    ? 'https://www.geckoterminal.com/solana/pools/'
+                    : 'https://www.geckoterminal.com/solana/tokens/';
+                return base + encodeURIComponent(mintOrPool) + '?' + q.toString();
+            }
+
+            function initGeckoTerminalEmbed() {
+                if (!chartEl || !MINT) return;
+                document.querySelector('.term-chart-wrap')?.classList.remove('term-chart-wrap--tv');
+                chartEl.classList.remove('term-chart--gt');
+                document.querySelector('.term-chart-wrap')?.classList.add('term-chart-wrap--gt');
+                chartEl.classList.add('term-chart--gt');
+                chartEl.innerHTML = '';
+                const crop = document.createElement('div');
+                crop.className = 'gt-embed-crop';
+                const fr = document.createElement('iframe');
+                fr.id = 'geckoterminal-chart-frame';
+                fr.className = 'gt-embed-iframe';
+                fr.title = 'GeckoTerminal chart';
+                fr.setAttribute('loading', 'lazy');
+                fr.referrerPolicy = 'no-referrer-when-downgrade';
+                fr.allow = 'clipboard-write';
+                fr.src = geckoTerminalEmbedUrl(MINT);
+                crop.appendChild(fr);
+                chartEl.appendChild(crop);
+            }
+
+            function initTradingViewDefaultChart() {
+                if (!chartEl) return;
+                document.querySelector('.term-chart-wrap')?.classList.remove('term-chart-wrap--gt');
+                chartEl.classList.remove('term-chart--gt');
+                document.querySelector('.term-chart-wrap')?.classList.add('term-chart-wrap--tv');
+                const mount = () => {
+                    if (!chartEl || typeof TradingView === 'undefined') return;
+                    const sym = tradingViewSymbolFromTicker(token.symbol);
+                    mountTradingViewWidget(sym);
+                };
+                if (typeof TradingView !== 'undefined') {
+                    mount();
+                    return;
+                }
+                const s = document.createElement('script');
+                s.src = 'https://s3.tradingview.com/tv.js';
+                s.async = true;
+                s.onload = mount;
+                s.onerror = () => {
+                    chartEl.innerHTML = '<p style="padding:12px;color:#ef5350;font-size:13px;">Could not load TradingView script.</p>';
+                };
+                document.head.appendChild(s);
+            }
+
+            function initMcChart() {
+                if (USE_GECKOTERMINAL_EMBED) {
+                    initGeckoTerminalEmbed();
+                    return;
+                }
+                if (USE_TRADINGVIEW_DEFAULT_CHART) {
+                    initTradingViewDefaultChart();
+                    return;
+                }
+                if (!LW || !chartEl) return;
+                chart = LW.createChart(chartEl, {
+                    layout: {
+                        background: { type: LW.ColorType.Solid, color: '#000000' },
+                        textColor: '#d1d4dc',
+                        fontSize: 12,
+                    },
+                    /** Time + MCap/price: wheel, pinch, and drag on each axis to zoom (matches pro DEX / TradingView) */
+                    handleScroll: {
+                        mouseWheel: true,
+                        pressedMouseMove: true,
+                        horzTouchDrag: true,
+                        vertTouchDrag: true,
+                    },
+                    handleScale: {
+                        mouseWheel: true,
+                        pinch: true,
+                        axisPressedMouseMove: {
+                            time: true,
+                            price: true,
+                        },
+                    },
+                    grid: {
+                        vertLines: { color: '#1c2030', style: 1 },
+                        horzLines: { color: '#1c2030', style: 1 },
+                    },
+                    rightPriceScale: {
+                        borderColor: '#1c2030',
+                        scaleMargins: { top: 0.08, bottom: 0.08 },
+                        autoScale: true,
+                        minimumWidth: 88,
+                        borderVisible: true,
+                    },
+                    timeScale: {
+                        barSpacing: chartBarSpacingForInterval(chartBucketSec, 48),
+                        borderColor: '#1c2030',
+                        minBarSpacing: 3,
+                        rightOffset: 0,
+                        fixLeftEdge: true,
+                        timeVisible: true,
+                        secondsVisible: chartBucketSec < 60,
+                    },
+                    crosshair: {
+                        vertLine: { color: '#758696', width: 1, labelBackgroundColor: '#131722' },
+                        horzLine: { color: '#758696', width: 1, labelBackgroundColor: '#131722' },
+                    },
+                    localization: {
+                        priceFormatter: formatAxisValue,
+                    },
+                });
+                applyChartAxisLocalization();
+                createMainSeriesForStyle(chartStyle);
+
+                const intervalEl = document.getElementById('chart-interval-btns');
+                if (intervalEl && !intervalEl.children.length) {
+                    intervalEl.innerHTML = CHART_INTERVALS.map((x) => ''
+                        + '<button type="button" data-sec="' + x.sec + '">' + escapeHtml(x.label) + '</button>'
+                    ).join('');
+                    intervalEl.addEventListener('click', (e) => {
+                        const b = e.target.closest('button[data-sec]');
+                        if (!b) return;
+                        applyChartInterval(Number(b.getAttribute('data-sec')));
+                    });
+                }
+                const scaleEl = document.getElementById('chart-scale-btns');
+                if (scaleEl && !scaleEl.children.length) {
+                    scaleEl.innerHTML = CHART_SCALES.map((x) => ''
+                        + '<button type="button" data-y-mode="' + escapeHtml(x.id) + '">' + escapeHtml(x.label) + '</button>'
+                    ).join('');
+                    scaleEl.addEventListener('click', (e) => {
+                        const b = e.target.closest('button[data-y-mode]');
+                        if (!b) return;
+                        applyChartYMode(b.getAttribute('data-y-mode') || 'mc');
+                    });
+                }
+                const styleEl = document.getElementById('chart-style-btns');
+                if (styleEl && !styleEl.children.length) {
+                    styleEl.innerHTML = CHART_STYLES.map((x) => ''
+                        + '<button type="button" data-style="' + escapeHtml(x.id) + '">' + escapeHtml(x.label) + '</button>'
+                    ).join('');
+                    styleEl.addEventListener('click', (e) => {
+                        const b = e.target.closest('button[data-style]');
+                        if (!b) return;
+                        createMainSeriesForStyle(b.getAttribute('data-style') || 'candles');
+                    });
+                }
+                document.getElementById('chart-fit-btn')?.addEventListener('click', () => {
+                    userInteractedChart = false;
+                    initialBarSpacingApplied = false;
+                    try { chart.priceScale('right').applyOptions({ autoScale: true }); } catch {}
+                    fitChartTimeAndPrice();
+                });
+                syncChartToolbar();
+
+                chartEl.addEventListener('pointerdown', (event) => {
+                    userInteractedChart = true;
+                    if (isWithinPriceScaleGrabZone(event.clientX)) {
+                        disablePriceAutoScaleForManualYAxis();
+                    }
+                }, true);
+                chartEl.addEventListener('wheel', (event) => {
+                    userInteractedChart = true;
+                    if (isWithinPriceScaleGrabZone(event.clientX)) {
+                        disablePriceAutoScaleForManualYAxis();
+                    }
+                }, { capture: true, passive: true });
+                chartEl.addEventListener('touchstart', () => { userInteractedChart = true; }, { capture: true, passive: true });
+                chartEl.addEventListener('dblclick', () => {
+                    // double-click to reset view back to auto-fit
+                    userInteractedChart = false;
+                    initialBarSpacingApplied = false;
+                    try { chart.priceScale('right').applyOptions({ autoScale: true }); } catch {}
+                    fitChartTimeAndPrice();
+                });
+
+                const ohlcEl = document.getElementById('chart-ohlc-legend');
+                chart.subscribeCrosshairMove((param) => {
+                    if (!ohlcEl || !seriesMain) return;
+                    if (!param || param.time === undefined) {
+                        ohlcEl.hidden = true;
+                        return;
+                    }
+                    const sd = param.seriesData.get(seriesMain);
+                    if (!sd) {
+                        ohlcEl.hidden = true;
+                        return;
+                    }
+                    const sym = String(token.symbol || 'TKN').replace(/^\$?/, '');
+                    const unit = chartYMode === 'mc' ? 'MC' : 'Price';
+                    if (chartStyle === 'candles' && sd.open !== undefined && sd.high !== undefined) {
+                        const ch = sd.close >= sd.open ? 'ohlc-up' : 'ohlc-down';
+                        ohlcEl.innerHTML = ''
+                            + '<span class="ohlcm">' + escapeHtml(sym) + ' · ' + escapeHtml(unit) + '</span><br/>'
+                            + '<span class="' + ch + '">'
+                            + '<span class="ohlc-tag">O</span>' + formatAxisValue(sd.open)
+                            + ' <span class="ohlc-tag">H</span>' + formatAxisValue(sd.high)
+                            + ' <span class="ohlc-tag">L</span>' + formatAxisValue(sd.low)
+                            + ' <span class="ohlc-tag">C</span>' + formatAxisValue(sd.close)
+                            + '</span>';
+                        ohlcEl.hidden = false;
+                    } else if (sd.value !== undefined) {
+                        ohlcEl.innerHTML = '<span class="ohlcm">' + escapeHtml(sym) + ' · ' + escapeHtml(unit)
+                            + '</span><br/>' + formatAxisValue(sd.value);
+                        ohlcEl.hidden = false;
+                    } else {
+                        ohlcEl.hidden = true;
+                    }
+                });
+
+                const resize = () => {
+                    const w = chartEl.clientWidth;
+                    const h = Math.max(320, chartEl.clientHeight || chartEl.parentElement?.clientHeight || 360);
+                    const opts = { width: w, height: h };
+                    if (!userInteractedChart) {
+                        opts.timeScale = {
+                            barSpacing: chartBarSpacingForInterval(chartBucketSec, candleBuckets.size || rawChartPoints.length || 48),
+                            minBarSpacing: 2,
+                            rightOffset: 0,
+                        };
+                    }
+                    chart.applyOptions(opts);
+                };
+                resize();
+                window.addEventListener('resize', resize);
+                if (typeof ResizeObserver !== 'undefined') {
+                    const ro = new ResizeObserver(resize);
+                    ro.observe(chartEl);
+                }
+            }
+            initMcChart();
+
+            // ---- rendering ----
+            function renderHeader() {
+                const symRaw = String(token.symbol || 'TKN');
+                termTickerEl.textContent = symRaw.startsWith('$') ? symRaw : ('$' + symRaw.replace(/^\$/, ''));
+                termNameEl.textContent = token.name || 'unnamed';
+                if (termIconEl) {
+                    if (token.image_uri) {
+                        termIconEl.src = ipfsToHttp(token.image_uri);
+                        termIconEl.style.display = '';
+                    } else {
+                        termIconEl.removeAttribute('src');
+                        termIconEl.style.display = 'none';
+                    }
+                }
+                const links = [];
+                if (token.twitter) links.push('<a href="' + escapeHtml(token.twitter) + '" target="_blank" rel="noopener">X</a>');
+                if (token.website) links.push('<a href="' + escapeHtml(token.website) + '" target="_blank" rel="noopener">WEB</a>');
+                if (token.telegram) links.push('<a href="' + escapeHtml(token.telegram) + '" target="_blank" rel="noopener">TG</a>');
+                if (token.discord) links.push('<a href="' + escapeHtml(token.discord) + '" target="_blank" rel="noopener">DC</a>');
+                termLinksEl.innerHTML = links.join('');
+            }
+
+            function renderStats() {
+                const mc = computeUsdMc();
+                const vol = computeUsdVolume();
+                const liq = Number(token.liquidityUsd) || 0;
+                termMcEl.textContent = mc > 0 ? ('$' + formatCompactNumber(mc)) : '—';
+                termVolEl.textContent = vol > 0 ? ('$' + formatCompactNumber(vol)) : '—';
+                termLiqEl.textContent = liq > 0 ? ('$' + formatCompactNumber(liq)) : '—';
+            }
+
+            const posInvestedEl = document.getElementById('pos-invested');
+            const posSoldEl = document.getElementById('pos-sold');
+            const posHoldingEl = document.getElementById('pos-holding');
+            const posPnlEl = document.getElementById('pos-pnl');
+            const posMsHoldingEl = document.getElementById('pos-ms-holding');
+            const posMsTotalPnlEl = document.getElementById('pos-ms-total-pnl');
+            const posShareBtn = document.getElementById('pos-share-btn');
+
+            // ---- Share PnL card (uses lykeuipnlcard.png template) ----
+            let pnlCardImage = null;
+            let pnlCardFontsPromise = null;
+            function loadPnlCardFonts() {
+                if (!pnlCardFontsPromise) {
+                    pnlCardFontsPromise = (async () => {
+                        try {
+                            await document.fonts.load("185px 'NCLNeovibes Demo'");
+                        } catch (e) {
+                            console.warn('[pnl-card] NCLNeovibes font load', e);
+                        }
+                    })();
+                }
+                return pnlCardFontsPromise;
+            }
+            function loadPnlCardTemplate() {
+                if (pnlCardImage) return loadPnlCardFonts().then(() => pnlCardImage);
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = async () => {
+                        pnlCardImage = img;
+                        await loadPnlCardFonts();
+                        resolve(img);
+                    };
+                    img.onerror = reject;
+                    img.src = '../assets/images/lykeuipnlcard.png';
+                });
+            }
+
+            function getMcUsdForMintForCard(mint) {
+                if (mint === MINT) return computeUsdMc();
+                const dex = dexMintCache.get(mint);
+                const p = wallet.positions[mint];
+                return Number(dex?.mcUsd) || Number(p?.lastMcUsd) || 0;
+            }
+
+            function tickerForPnlCard(mint) {
+                if (mint === MINT) return String(token.symbol || 'TKN').replace(/^\$?/, '');
+                const p = wallet.positions[mint];
+                const dex = dexMintCache.get(mint);
+                return String(p?.symbol || dex?.symbol || 'TKN').replace(/^\$?/, '');
+            }
+
+            /**
+             * Template lykeuipnlcard.png (~2000×1334). targetMint defaults to current terminal mint.
+             */
+            async function buildPnlCardCanvas(targetMint) {
+                const mint = targetMint || MINT;
+                const pos = wallet.positions[mint];
+                const hist = (wallet.history || []).filter((h) => h.mint === mint);
+                const investedTotal = hist.filter((h) => h.kind === 'buy').reduce((s, h) => s + (Number(h.sol) || 0), 0);
+                const realized = hist.filter((h) => h.kind === 'sell').reduce((s, h) => s + (Number(h.pnlSol) || 0), 0);
+                let holding = 0;
+                let unreal = 0;
+                if (pos && pos.entryMcUsd > 0) {
+                    const mc = getMcUsdForMintForCard(mint);
+                    const ratio = mc > 0 ? mc / pos.entryMcUsd : 1;
+                    holding = pos.investedSol * ratio;
+                    unreal = holding - pos.investedSol;
+                }
+                const pnl = realized + unreal;
+                const pct = investedTotal > 0 ? (pnl / investedTotal) * 100 : 0;
+                const ticker = tickerForPnlCard(mint);
+
+                const img = pnlCardImage;
+                const W = img.naturalWidth;
+                const H = img.naturalHeight;
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                ctx.textBaseline = 'alphabetic';
+
+                // Ticker
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'left';
+                ctx.font = '700 130px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText(ticker.toUpperCase(), W * 0.048 + 52, H * 0.395);
+
+                // Big PnL (SOL): anchor +10px right vs prior; always white on card
+                const pnlSolStr = (pnl >= 0 ? '+' : '') + pnl.toFixed(3);
+                const pnlSolX = W * 0.22 - 90;
+                const pnlSolY = H * 0.58 - 44;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 185px "NCLNeovibes Demo", "Helvetica Neue", Arial, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(pnlSolStr, pnlSolX, pnlSolY);
+
+                // Stats row: invested/hold; per-column x nudge; row +10px down vs prior
+                const statsY = H * 0.796 + 170;
+                const investedX = Math.max(16, W * 0.40 - 666);
+                const holdX = Math.max(16, W * 0.58 - 640);
+                const pctX = Math.max(80, W * 0.955 - 840);
+                ctx.textAlign = 'left';
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(investedTotal.toFixed(2) + ' SOL', investedX, statsY);
+                ctx.fillText(holding.toFixed(2) + ' SOL', holdX, statsY);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.textAlign = 'right';
+                const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+                ctx.fillText(pctStr, pctX, statsY);
+
+                const uname = getPnlCardDisplayName();
+                ctx.textAlign = 'right';
+                ctx.font = '500 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                if (uname) ctx.fillText(uname, W * 0.955, statsY);
+
+                return canvas;
+            }
+
+            function showPnlCardModal(canvas, downloadSlug) {
+                // Remove any previous modal
+                document.getElementById('pnl-card-modal')?.remove();
+                const modal = document.createElement('div');
+                modal.id = 'pnl-card-modal';
+                modal.className = 'pnl-card-modal';
+                modal.innerHTML = ''
+                    + '<div class="pnl-card-backdrop"></div>'
+                    + '<div class="pnl-card-dialog">'
+                    +   '<button type="button" class="pnl-card-close" aria-label="Close">×</button>'
+                    +   '<div class="pnl-card-preview"></div>'
+                    +   '<div class="pnl-card-actions">'
+                    +     '<button type="button" class="pnl-card-btn is-primary" data-action="download">Download</button>'
+                    +     '<button type="button" class="pnl-card-btn" data-action="copy">Copy image</button>'
+                    +   '</div>'
+                    + '</div>';
+                const preview = modal.querySelector('.pnl-card-preview');
+                canvas.style.maxWidth = '100%';
+                canvas.style.height = 'auto';
+                canvas.style.borderRadius = '10px';
+                canvas.style.display = 'block';
+                preview.appendChild(canvas);
+                document.body.appendChild(modal);
+
+                const close = () => modal.remove();
+                modal.querySelector('.pnl-card-close').addEventListener('click', close);
+                modal.querySelector('.pnl-card-backdrop').addEventListener('click', close);
+
+                modal.querySelector('[data-action="download"]').addEventListener('click', () => {
+                    canvas.toBlob((blob) => {
+                        if (!blob) return;
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        const sym = String(downloadSlug || token.symbol || 'token').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                        a.href = url;
+                        a.download = 'lykeion-pnl-' + sym + '.png';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 2000);
+                        toast('PnL card downloaded', 'is-pos');
+                    }, 'image/png');
+                });
+                modal.querySelector('[data-action="copy"]').addEventListener('click', async () => {
+                    try {
+                        const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+                        if (!blob) throw new Error('blob failed');
+                        if (navigator.clipboard && window.ClipboardItem) {
+                            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                            toast('Image copied to clipboard', 'is-pos');
+                        } else {
+                            toast('Clipboard images not supported in this browser', 'is-err');
+                        }
+                    } catch (err) {
+                        console.warn('[pnl-card] copy failed', err);
+                        toast('Copy failed — use Download', 'is-err');
+                    }
+                });
+            }
+
+            posShareBtn?.addEventListener('click', async () => {
+                try {
+                    if (!(await ensurePnlHandleSet())) return;
+                    await loadPnlCardTemplate();
+                    const canvas = await buildPnlCardCanvas(MINT);
+                    const slug = tickerForPnlCard(MINT).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    showPnlCardModal(canvas, slug);
+                } catch (err) {
+                    console.warn('[pnl-card] failed', err);
+                    toast('Could not load PnL template', 'is-err');
+                }
+            });
+
+            function renderPosition() {
+                const pos = wallet.positions[MINT];
+                const hist = (wallet.history || []).filter((h) => h.mint === MINT);
+                const investedTotal = hist.filter((h) => h.kind === 'buy').reduce((s, h) => s + (Number(h.sol) || 0), 0);
+                const soldTotal = hist.filter((h) => h.kind === 'sell').reduce((s, h) => s + (Number(h.sol) || 0), 0);
+                const realized = hist.filter((h) => h.kind === 'sell').reduce((s, h) => s + (Number(h.pnlSol) || 0), 0);
+                let holding = 0;
+                let unreal = 0;
+                if (pos && pos.entryMcUsd > 0) {
+                    const mc = computeUsdMc();
+                    const ratio = mc > 0 ? mc / pos.entryMcUsd : 1;
+                    holding = pos.investedSol * ratio;
+                    unreal = holding - pos.investedSol;
+                }
+                const pnl = realized + unreal;
+                if (posInvestedEl) posInvestedEl.textContent = investedTotal.toFixed(3) + ' SOL';
+                if (posSoldEl) posSoldEl.textContent = soldTotal.toFixed(3) + ' SOL';
+                if (posHoldingEl) posHoldingEl.textContent = holding.toFixed(3) + ' SOL';
+                if (posPnlEl) {
+                    posPnlEl.textContent = fmtSol(pnl) + ' SOL';
+                    posPnlEl.classList.toggle('is-pos', pnl > 0);
+                    posPnlEl.classList.toggle('is-neg', pnl < 0);
+                }
+                if (posMsHoldingEl) {
+                    posMsHoldingEl.textContent = holding.toFixed(3) + ' SOL';
+                }
+                if (posMsTotalPnlEl) {
+                    posMsTotalPnlEl.textContent = fmtSol(pnl) + ' SOL';
+                    posMsTotalPnlEl.classList.toggle('is-pos', pnl > 0);
+                    posMsTotalPnlEl.classList.toggle('is-neg', pnl < 0);
+                }
+                if (posShareBtn) posShareBtn.disabled = !hist.length;
+            }
+
+            function computeUnrealizedPnl(pos, currentMcUsd) {
+                if (!pos || !pos.entryMcUsd || pos.entryMcUsd <= 0) return 0;
+                if (!Number.isFinite(currentMcUsd) || currentMcUsd <= 0) return 0;
+                const ratio = currentMcUsd / pos.entryMcUsd;
+                return pos.investedSol * ratio - pos.investedSol;
+            }
+
+            function totalUnrealizedSol() {
+                let total = 0;
+                for (const mint of Object.keys(wallet.positions)) {
+                    const pos = wallet.positions[mint];
+                    const mc = mint === MINT ? computeUsdMc() : (pos.lastMcUsd || pos.entryMcUsd);
+                    if (mint === MINT && mc > 0) pos.lastMcUsd = mc;
+                    total += computeUnrealizedPnl(pos, mc);
+                }
+                return total;
+            }
+
+            const WALLET_PNL_7D_MS = 7 * 24 * 60 * 60 * 1000;
+            /** Realized PnL from sells in the last 7 days, plus buy/sell SOL volume in that window (for the share card). */
+            function computeWalletPnl7d() {
+                const cutoff = Date.now() - WALLET_PNL_7D_MS;
+                let realized7d = 0;
+                let buyVol7d = 0;
+                let sellProceeds7d = 0;
+                for (const h of wallet.history || []) {
+                    const t = Number(h.at) || 0;
+                    if (t < cutoff) continue;
+                    if (h.kind === 'buy') buyVol7d += Number(h.sol) || 0;
+                    if (h.kind === 'sell') {
+                        sellProceeds7d += Number(h.sol) || 0;
+                        if (Number.isFinite(h.pnlSol)) realized7d += h.pnlSol;
+                    }
+                }
+                const pct = buyVol7d > 0 ? (realized7d / buyVol7d) * 100 : 0;
+                return { realized7d, buyVol7d, sellProceeds7d, pct };
+            }
+
+            async function buildWallet7dPnlCardCanvas() {
+                const { realized7d, buyVol7d, pct } = computeWalletPnl7d();
+                const unrealOpen = totalUnrealizedSol();
+                const img = pnlCardImage;
+                if (!img) return null;
+                const W = img.naturalWidth;
+                const H = img.naturalHeight;
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'left';
+                ctx.font = '700 130px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText('7 DAY', W * 0.048 + 52, H * 0.395);
+                const pnlSolStr = (realized7d >= 0 ? '+' : '') + realized7d.toFixed(3);
+                const pnlSolX = W * 0.22 - 90;
+                const pnlSolY = H * 0.58 - 44;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 185px "NCLNeovibes Demo", "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText(pnlSolStr, pnlSolX, pnlSolY);
+                const statsY = H * 0.796 + 170;
+                const investedX = Math.max(16, W * 0.40 - 666);
+                const holdX = Math.max(16, W * 0.58 - 640);
+                const pctX = Math.max(80, W * 0.955 - 840);
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(buyVol7d.toFixed(2) + ' SOL', investedX, statsY);
+                ctx.fillText(unrealOpen.toFixed(2) + ' SOL', holdX, statsY);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText((pct >= 0 ? '+' : '') + pct.toFixed(1) + '%', pctX, statsY);
+                const uname = getPnlCardDisplayName();
+                ctx.font = '500 60px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                if (uname) ctx.fillText(uname, W * 0.955, statsY);
+                return canvas;
+            }
+
+            // DexScreener name/MC cache for mints we don't have live data for
+            const dexMintCache = new Map();
+            async function fetchDexMintData(mints) {
+                const missing = mints.filter((m) => m && !dexMintCache.has(m));
+                if (!missing.length) return;
+                try {
+                    const chunks = [];
+                    for (let i = 0; i < missing.length; i += 30) chunks.push(missing.slice(i, i + 30));
+                    for (const chunk of chunks) {
+                        const url = 'https://api.dexscreener.com/latest/dex/tokens/' + chunk.join(',');
+                        const res = await fetch(url, { cache: 'no-store', headers: { accept: 'application/json' } });
+                        if (!res.ok) continue;
+                        const body = await res.json();
+                        const pairs = Array.isArray(body?.pairs) ? body.pairs : [];
+                        chunk.forEach((mint) => {
+                            const hit = pairs
+                                .filter((p) => String(p?.baseToken?.address || '').toLowerCase() === mint.toLowerCase())
+                                .sort((a, b) => (Number(b?.liquidity?.usd) || 0) - (Number(a?.liquidity?.usd) || 0))[0];
+                            dexMintCache.set(mint, hit ? {
+                                symbol: hit?.baseToken?.symbol || '',
+                                name: hit?.baseToken?.name || '',
+                                mcUsd: Number(hit?.marketCap || hit?.fdv) || 0,
+                            } : null);
+                        });
+                    }
+                } catch {}
+            }
+
+            function renderPortfolioHistory() {
+                const el = document.getElementById('portfolio-history-list');
+                if (!el) return;
+                const sells = (wallet.history || [])
+                    .filter((h) => h.kind === 'sell' && Number.isFinite(h.pnlSol))
+                    .sort((a, b) => (b.pnlSol || 0) - (a.pnlSol || 0))
+                    .slice(0, 5);
+                if (!sells.length) {
+                    el.innerHTML = '<div class="tx-empty" style="padding:12px;">No closed trades yet</div>';
+                    return;
+                }
+                el.innerHTML = sells.map((h) => {
+                    const pos = wallet.positions[h.mint];
+                    const dex = dexMintCache.get(h.mint);
+                    let sym = pos?.symbol || dex?.symbol || '';
+                    if (sym) sym = '$' + String(sym).replace(/^\$/, '');
+                    if (!sym && h.mint) {
+                        const m = String(h.mint);
+                        sym = m.length > 12 ? m.slice(0, 4) + '…' + m.slice(-4) : m;
+                    }
+                    if (!sym) sym = '—';
+                    const pnl = Number(h.pnlSol) || 0;
+                    const pnlCls = pnl >= 0 ? 'is-pos' : 'is-neg';
+                    const pnlStr = (pnl >= 0 ? '+' : '') + pnl.toFixed(3) + ' SOL';
+                    const mc = Number(h.mcUsd) || 0;
+                    const detail = (Number(h.sol) || 0).toFixed(3) + ' SOL'
+                        + (mc > 0 ? ' · MC $' + formatCompactNumber(mc) : '');
+                    return ''
+                        + '<div class="portfolio-hist-row">'
+                        + '<span class="ph-main"><strong>' + escapeHtml(sym) + '</strong> '
+                        + '<span class="ph-pnl ' + pnlCls + '">' + escapeHtml(pnlStr) + '</span><br>'
+                        + '<span style="opacity:0.55;font-size:11px;">' + escapeHtml(detail) + '</span></span>'
+                        + '<div class="ph-right">'
+                        + '<button type="button" class="portfolio-hist-pnl-card" data-pnl-card-mint="' + escapeHtml(h.mint) + '" title="Open PnL card">PnL card</button>'
+                        + '<span class="ph-age">' + formatAge(h.at) + '</span>'
+                        + '</div>'
+                        + '</div>';
+                }).join('');
+            }
+
+            document.getElementById('portfolio-history-list')?.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-pnl-card-mint]');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const mint = btn.getAttribute('data-pnl-card-mint');
+                if (!mint) return;
+                try {
+                    if (!(await ensurePnlHandleSet())) return;
+                    await loadPnlCardTemplate();
+                    const canvas = await buildPnlCardCanvas(mint);
+                    const slug = tickerForPnlCard(mint).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    showPnlCardModal(canvas, slug);
+                } catch (err) {
+                    console.warn('[pnl-card] failed', err);
+                    toast('Could not load PnL template', 'is-err');
+                }
+            });
+
+            function pruneDustPositions() {
+                let changed = false;
+                for (const m of [...Object.keys(wallet.positions)]) {
+                    const p = wallet.positions[m];
+                    if (!p || Number(p.investedSol) < MIN_OPEN_POSITION_SOL) {
+                        delete wallet.positions[m];
+                        changed = true;
+                    }
+                }
+                if (changed) saveWallet();
+            }
+
+            function renderDemoPortfolio() {
+                pruneDustPositions();
+                const unreal = totalUnrealizedSol();
+                const pnlTotal = wallet.realizedPnlSol + unreal;
+                const balUsdEl = document.getElementById('portfolio-bal-usd');
+                const balEl = document.getElementById('portfolio-bal-summary');
+                const pnlEl = document.getElementById('portfolio-pnl-summary');
+                const bal = Number(wallet.balanceSol) || 0;
+                const spot = Number(solPriceUsd) > 0 ? solPriceUsd : 0;
+                const usd = spot > 0 ? bal * spot : 0;
+                if (balUsdEl) {
+                    balUsdEl.textContent = usd > 0
+                        ? ('$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+                        : '—';
+                }
+                if (balEl) balEl.textContent = bal.toFixed(6) + ' SOL';
+                if (pnlEl) {
+                    pnlEl.textContent = fmtSol(pnlTotal) + ' SOL';
+                    pnlEl.classList.toggle('is-pos', pnlTotal > 0);
+                    pnlEl.classList.toggle('is-neg', pnlTotal < 0);
+                }
+                const closedSells = (wallet.history || []).filter((h) => h.kind === 'sell' && Number.isFinite(h.pnlSol));
+                const wins = closedSells.filter((h) => h.pnlSol > 0).length;
+                const total = closedSells.length;
+                const hitRate = total > 0 ? (wins / total) * 100 : 0;
+                const hitEl = document.getElementById('portfolio-hitrate-summary');
+                if (hitEl) {
+                    hitEl.textContent = total > 0 ? (hitRate.toFixed(0) + '% (' + wins + '/' + total + ')') : '—';
+                    hitEl.classList.toggle('is-pos', hitRate >= 50 && total > 0);
+                    hitEl.classList.toggle('is-neg', hitRate < 50 && total > 0);
+                }
+                const p7d = computeWalletPnl7d();
+                const pnl7dEl = document.getElementById('portfolio-pnl-7d-summary');
+                if (pnl7dEl) {
+                    pnl7dEl.textContent = fmtSol(p7d.realized7d) + ' SOL';
+                    pnl7dEl.classList.toggle('is-pos', p7d.realized7d > 0);
+                    pnl7dEl.classList.toggle('is-neg', p7d.realized7d < 0);
+                }
+                renderPositionsList();
+                renderPortfolioHistory();
+                // Prefetch dex data for any mints we don't have live
+                const needed = new Set();
+                Object.keys(wallet.positions).forEach((m) => { if (m !== MINT) needed.add(m); });
+                (wallet.history || []).forEach((h) => { if (h.mint && h.mint !== MINT) needed.add(h.mint); });
+                if (needed.size) {
+                    const panel = document.getElementById('positions-panel');
+                    fetchDexMintData([...needed]).then(() => {
+                        if (panel && !panel.hidden) {
+                            renderPositionsList();
+                            renderPortfolioHistory();
+                        }
+                    });
+                }
+            }
+
+            function renderWalletHud() {
+                if (whBalEl) whBalEl.textContent = fmtSolPlain(wallet.balanceSol);
+                const pp = document.getElementById('positions-panel');
+                if (pp && !pp.hidden) renderDemoPortfolio();
+            }
+
+            function renderTradesLegend() { /* moved into token transactions as "My trades" filter */ }
+
+            // ---- toast ----
+            function toast(message, type) {
+                if (!toastStack) return;
+                const el = document.createElement('div');
+                el.className = 'toast ' + (type || '');
+                el.textContent = message;
+                toastStack.appendChild(el);
+                window.setTimeout(() => {
+                    el.style.opacity = '0';
+                    el.style.transition = 'opacity 200ms ease';
+                    window.setTimeout(() => el.remove(), 220);
+                }, 2800);
+            }
+
+            // ---- trading ----
+            function playKachingTradeSound() {
+                try {
+                    if (!playKachingTradeSound._a) {
+                        playKachingTradeSound._a = new Audio('kaching-sound-fx.mp3');
+                        playKachingTradeSound._a.preload = 'auto';
+                    }
+                    const a = playKachingTradeSound._a;
+                    a.currentTime = 0;
+                    const p = a.play();
+                    if (p && typeof p.catch === 'function') p.catch(() => {});
+                } catch (_) {}
+            }
+
+            function executeBuy(amountSol, mcUsdAtClick) {
+                if (!(amountSol > 0)) return false;
+                if (amountSol > wallet.balanceSol + 1e-9) {
+                    toast('Insufficient balance (' + fmtSolPlain(wallet.balanceSol) + ')', 'is-err');
+                    return false;
+                }
+                if (!(mcUsdAtClick > 0)) {
+                    toast('No market cap available — can\'t price entry', 'is-err');
+                    return false;
+                }
+                playKachingTradeSound();
+                const existing = wallet.positions[MINT];
+                if (existing) {
+                    const totalInvested = existing.investedSol + amountSol;
+                    const newRatio = totalInvested / ((existing.investedSol / existing.entryMcUsd) + (amountSol / mcUsdAtClick));
+                    existing.entryMcUsd = newRatio;
+                    existing.investedSol = totalInvested;
+                    existing.lastMcUsd = mcUsdAtClick;
+                    existing.symbol = token.symbol || existing.symbol;
+                    existing.name = token.name || existing.name;
+                    existing.image_uri = token.image_uri || existing.image_uri;
+                } else {
+                    wallet.positions[MINT] = {
+                        mint: MINT,
+                        symbol: token.symbol || 'TKN',
+                        name: token.name || 'unnamed',
+                        image_uri: token.image_uri || '',
+                        entryMcUsd: mcUsdAtClick,
+                        investedSol: amountSol,
+                        lastMcUsd: mcUsdAtClick,
+                        openedAt: Date.now()
+                    };
+                }
+                wallet.balanceSol -= amountSol;
+                wallet.history.unshift({ kind: 'buy', mint: MINT, sol: amountSol, mcUsd: mcUsdAtClick, at: Date.now() });
+                if (wallet.history.length > 100) wallet.history.length = 100;
+                saveWallet();
+                renderWalletHud();
+                renderPosition();
+                pushMyTrade('buy', amountSol, mcUsdAtClick);
+                toast(
+                    'Entry · Avg fill MC $' + formatCompactNumber(mcUsdAtClick) + ' · ' + amountSol.toFixed(3) + ' SOL',
+                    'is-pos'
+                );
+                pushChartTradeToast('buy', amountSol, mcUsdAtClick, null);
+                updateChartFloatToasts();
+                return true;
+            }
+
+            function executeSell(fractionOfPosition, currentMcUsd) {
+                const pos = wallet.positions[MINT];
+                if (!pos) { toast('No position to sell', 'is-err'); return false; }
+                if (!(currentMcUsd > 0)) { toast('No live MC — can\'t close', 'is-err'); return false; }
+                const f = Math.max(0, Math.min(1, Number(fractionOfPosition) || 0));
+                if (f <= 0) return false;
+                const sellInvested = pos.investedSol * f;
+                const ratio = currentMcUsd / pos.entryMcUsd;
+                const proceedsSol = sellInvested * ratio;
+                const realized = proceedsSol - sellInvested;
+                wallet.balanceSol += proceedsSol;
+                wallet.realizedPnlSol += realized;
+                pos.investedSol -= sellInvested;
+                pos.lastMcUsd = currentMcUsd;
+                wallet.history.unshift({ kind: 'sell', mint: MINT, sol: proceedsSol, pnlSol: realized, mcUsd: currentMcUsd, at: Date.now() });
+                if (wallet.history.length > 100) wallet.history.length = 100;
+                if (pos.investedSol < MIN_OPEN_POSITION_SOL) delete wallet.positions[MINT];
+                saveWallet();
+                renderWalletHud();
+                renderPosition();
+                pushMyTrade('sell', proceedsSol, currentMcUsd, realized);
+                toast(
+                    'Exit · MC $' + formatCompactNumber(currentMcUsd) + ' · proceeds ' + proceedsSol.toFixed(3) + ' SOL · PnL ' + fmtSol(realized),
+                    realized >= 0 ? 'is-pos' : 'is-neg'
+                );
+                pushChartTradeToast('sell', proceedsSol, currentMcUsd, realized);
+                playKachingTradeSound();
+                updateChartFloatToasts();
+                return true;
+            }
+
+            // ---- trade form ----
+            const BUY_PRESETS = [0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5];
+            const SELL_PRESETS = [10, 25, 50, 75, 100];
+            let tradeSide = 'buy';
+
+            function renderPresets() {
+                if (!termPresetsEl) return;
+                if (tradeSide === 'buy') {
+                    termPresetsEl.innerHTML = BUY_PRESETS.map((v) => '<button type="button" data-preset-sol="' + v + '">' + v + ' SOL</button>').join('');
+                } else {
+                    termPresetsEl.innerHTML = SELL_PRESETS.map((v) => '<button type="button" data-preset-pct="' + v + '">' + v + '%</button>').join('');
+                }
+            }
+            renderPresets();
+
+            termPresetsEl?.addEventListener('click', (e) => {
+                const b = e.target.closest('button');
+                if (!b || !termAmountEl) return;
+                if (tradeSide === 'buy') {
+                    const v = Number(b.getAttribute('data-preset-sol'));
+                    if (Number.isFinite(v)) termAmountEl.value = String(v);
+                } else {
+                    const pct = Number(b.getAttribute('data-preset-pct'));
+                    const pos = wallet.positions[MINT];
+                    if (pos && Number.isFinite(pct)) {
+                        const mc = computeUsdMc() || pos.lastMcUsd;
+                        const ratio = mc / pos.entryMcUsd;
+                        const currentValue = pos.investedSol * ratio;
+                        termAmountEl.value = (currentValue * pct / 100).toFixed(3);
+                    }
+                }
+            });
+
+            toggleBtns.forEach((btn) => btn.addEventListener('click', () => {
+                tradeSide = btn.dataset.side;
+                toggleBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+                termSubmitEl.classList.toggle('buy', tradeSide === 'buy');
+                termSubmitEl.classList.toggle('sell', tradeSide === 'sell');
+                termSubmitEl.textContent = tradeSide === 'buy' ? 'Buy' : 'Sell';
+                if (termAmountSuffix) termAmountSuffix.textContent = tradeSide === 'buy' ? 'SOL' : 'SOL (proceeds)';
+                if (termAmountEl) termAmountEl.value = '';
+                renderPresets();
+            }));
+
+            termSubmitEl?.addEventListener('click', () => {
+                const mc = computeUsdMc() || (wallet.positions[MINT]?.lastMcUsd || 0);
+                const amount = Number(termAmountEl?.value);
+                if (!(amount > 0)) { toast('Enter an amount', 'is-err'); return; }
+                if (tradeSide === 'buy') {
+                    executeBuy(amount, mc);
+                } else {
+                    const pos = wallet.positions[MINT];
+                    if (!pos) { toast('No position to sell', 'is-err'); return; }
+                    const ratio = mc / pos.entryMcUsd;
+                    const currentValue = pos.investedSol * ratio;
+                    const fraction = Math.min(1, amount / currentValue);
+                    executeSell(fraction, mc);
+                }
+                if (termAmountEl) termAmountEl.value = '';
+            });
+
+            const mobileTabChartEl = document.getElementById('mobile-tab-chart');
+            const mobileTabTradesEl = document.getElementById('mobile-tab-trades');
+            function setMobileTerminalTab(mode) {
+                const trades = mode === 'trades';
+                document.body.classList.toggle('mobile-term-view-trades', trades);
+                mobileTabChartEl?.classList.toggle('is-active', !trades);
+                mobileTabTradesEl?.classList.toggle('is-active', trades);
+                mobileTabChartEl?.setAttribute('aria-selected', trades ? 'false' : 'true');
+                mobileTabTradesEl?.setAttribute('aria-selected', trades ? 'true' : 'false');
+            }
+            mobileTabChartEl?.addEventListener('click', () => setMobileTerminalTab('chart'));
+            mobileTabTradesEl?.addEventListener('click', () => setMobileTerminalTab('trades'));
+            function syncMobileTerminalTabForViewport() {
+                if (!window.matchMedia('(max-width: 1000px)').matches) {
+                    document.body.classList.remove('mobile-term-view-trades');
+                }
+            }
+            window.addEventListener('resize', syncMobileTerminalTabForViewport);
+
+            const mqtRowBuyEl = document.getElementById('mqt-row-buy');
+            const mqtRowSellEl = document.getElementById('mqt-row-sell');
+            const mqtModeBuyEl = document.getElementById('mqt-mode-buy');
+            const mqtModeSellEl = document.getElementById('mqt-mode-sell');
+            function setMobileQuickMode(mode) {
+                const buy = mode === 'buy';
+                if (mqtRowBuyEl) mqtRowBuyEl.hidden = !buy;
+                if (mqtRowSellEl) mqtRowSellEl.hidden = buy;
+                mqtModeBuyEl?.classList.toggle('is-active', buy);
+                mqtModeSellEl?.classList.toggle('is-active', !buy);
+                mqtModeBuyEl?.setAttribute('aria-selected', buy ? 'true' : 'false');
+                mqtModeSellEl?.setAttribute('aria-selected', buy ? 'false' : 'true');
+            }
+            mqtModeBuyEl?.addEventListener('click', () => setMobileQuickMode('buy'));
+            mqtModeSellEl?.addEventListener('click', () => setMobileQuickMode('sell'));
+            document.getElementById('mobile-quick-trade')?.addEventListener('click', (e) => {
+                const buyBtn = e.target.closest('[data-mqt-buy]');
+                const sellBtn = e.target.closest('[data-mqt-sell]');
+                const mc = computeUsdMc() || (wallet.positions[MINT]?.lastMcUsd || 0);
+                if (buyBtn) {
+                    const sol = Number(buyBtn.getAttribute('data-mqt-buy'));
+                    if (Number.isFinite(sol) && sol > 0) executeBuy(sol, mc);
+                    return;
+                }
+                if (sellBtn) {
+                    const frac = Number(sellBtn.getAttribute('data-mqt-sell'));
+                    if (!wallet.positions[MINT]) {
+                        toast('No position to sell', 'is-err');
+                        return;
+                    }
+                    if (Number.isFinite(frac) && frac > 0) executeSell(Math.min(1, frac), mc);
+                }
+            });
+
+            // ---- SOL price ----
+            async function refreshSolPrice() {
+                for (const url of SOL_PRICE_URLS) {
+                    try {
+                        const res = await fetch(url, { cache: 'no-store' });
+                        if (!res.ok) continue;
+                        const j = await res.json();
+                        const price = Number(
+                            j?.solana?.usd
+                            ?? j?.data?.So11111111111111111111111111111111111111112?.price
+                            ?? j?.price
+                        );
+                        if (Number.isFinite(price) && price > 0) {
+                            solPriceUsd = price;
+                            return;
+                        }
+                    } catch {}
+                }
+            }
+
+            // ---- GeckoTerminal (CoinGecko) token stats ----
+            async function refreshDexScreenerSocials() {
+                try {
+                    const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + encodeURIComponent(MINT), {
+                        cache: 'no-store',
+                        headers: { accept: 'application/json' },
+                    });
+                    if (!res.ok) return;
+                    const body = await res.json();
+                    const pairs = Array.isArray(body?.pairs) ? body.pairs : [];
+                    if (!pairs.length) return;
+                    // pick the pair with the richest info object
+                    const ranked = pairs.slice().sort((a, b) => {
+                        const la = Number(a?.liquidity?.usd) || 0;
+                        const lb = Number(b?.liquidity?.usd) || 0;
+                        return lb - la;
+                    });
+                    let twitter = '', website = '', telegram = '', discord = '';
+                    for (const p of ranked) {
+                        const info = p?.info || {};
+                        const socials = Array.isArray(info.socials) ? info.socials : [];
+                        const websites = Array.isArray(info.websites) ? info.websites : [];
+                        socials.forEach((s) => {
+                            const type = String(s?.type || s?.platform || '').toLowerCase();
+                            const u = String(s?.url || '').trim();
+                            if (!u) return;
+                            if (!twitter && (type === 'twitter' || type === 'x' || /twitter\.com|x\.com/i.test(u))) twitter = u;
+                            else if (!telegram && (type === 'telegram' || /t\.me/i.test(u))) telegram = u;
+                            else if (!discord && (type === 'discord' || /discord\.(gg|com)/i.test(u))) discord = u;
+                        });
+                        websites.forEach((w) => {
+                            const u = String(w?.url || '').trim();
+                            if (!website && u) website = u;
+                        });
+                        if (twitter || website || telegram || discord) break;
+                    }
+                    if (twitter) token.twitter = twitter;
+                    if (website) token.website = website;
+                    if (telegram) token.telegram = telegram;
+                    if (discord) token.discord = discord;
+                    if (twitter || website || telegram || discord) renderHeader();
+                } catch {}
+            }
+
+            async function refreshGeckoStats() {
+                try {
+                    const url = GECKO_TERMINAL_API + '/' + encodeURIComponent(MINT);
+                    const res = await fetch(url, {
+                        cache: 'no-store',
+                        headers: { accept: 'application/json' },
+                    });
+                    if (!res.ok) return;
+                    const body = await res.json();
+                    const d = body?.data;
+                    if (!d || d.type !== 'token') return;
+                    const a = d.attributes || {};
+                    const mcUsd = Number(a.market_cap_usd || a.fdv_usd) || 0;
+                    const volUsd = Number(a.volume_usd?.h24) || 0;
+                    const px = Number(a.price_usd) || 0;
+                    if (mcUsd > 0) {
+                        token.mcUsdAuth = mcUsd;
+                        token.liveMcUsd = mcUsd;
+                    }
+                    if (volUsd > 0) token.volUsdAuth = volUsd;
+                    if (Number.isFinite(px) && px > 0) token.lastPriceUsd = px;
+                    if (a.symbol) token.symbol = String(a.symbol).trim() || token.symbol;
+                    if (a.name) token.name = String(a.name).trim() || token.name;
+                    if (!token.image_uri && a.image_url) token.image_uri = a.image_url;
+
+                    const pres = await fetch(url + '/pools?page=1', {
+                        cache: 'no-store',
+                        headers: { accept: 'application/json' },
+                    });
+                    if (pres.ok) {
+                        const pj = await pres.json();
+                        const pools = pj?.data;
+                        if (Array.isArray(pools) && pools.length) {
+                            const top = pools[0];
+                            const liqUsd = Number(top?.attributes?.reserve_in_usd) || 0;
+                            if (liqUsd > 0) token.liquidityUsd = liqUsd;
+                            const dexId = String(top?.relationships?.dex?.data?.id || '');
+                            if (/pumpswap/i.test(dexId)) token.migrated = true;
+                            const poolAddr = String(top?.attributes?.address || top?.id?.split('_')?.pop() || '').trim();
+                            if (poolAddr && token.geckoPoolAddr !== poolAddr) {
+                                token.geckoPoolAddr = poolAddr;
+                                const fr = document.getElementById('geckoterminal-chart-frame');
+                                if (fr) fr.src = geckoTerminalEmbedUrl(poolAddr, true);
+                            }
+                        }
+                    }
+                    renderHeader();
+                    renderStats();
+                    renderPosition();
+                    renderWalletHud();
+                    renderChartAnnotations();
+                    refreshTradingViewSymbolIfChanged();
+                } catch {}
+            }
+
+            // ---- WebSocket ----
+            let ws = null;
+            let wsReconnectTimer = null;
+            let wsReconnectAttempts = 0;
+
+            function wsSend(payload) {
+                if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+                try { ws.send(JSON.stringify(payload)); return true; } catch { return false; }
+            }
+
+            let txFilter = 'all';
+            let showDevBuys = false;
+            let devWallet = '';
+            function pushTx(side, sol, trader, isMine, opts) {
+                const o = opts || {};
+                const txSig = String(o.tx || o.signature || '').trim();
+                if (txSig) {
+                    if (!pushTx._seenTx) pushTx._seenTx = new Set();
+                    if (pushTx._seenTx.has(txSig)) return;
+                    pushTx._seenTx.add(txSig);
+                }
+                const fullTrader = String(o.fullTrader || trader || '');
+                const isDev = !isMine && !!devWallet && fullTrader && fullTrader === devWallet;
+                const row = {
+                    side, sol, trader, fullTrader,
+                    isMine: !!isMine, isDev,
+                    at: o.at || Date.now(),
+                    mcUsd: o.mcUsd != null ? o.mcUsd : computeUsdMc(),
+                    tx: txSig || undefined,
+                };
+                pushTx._buf = pushTx._buf || [];
+                pushTx._buf.unshift(row);
+                if (pushTx._buf.length > 200) pushTx._buf.length = 200;
+                renderTxs();
+            }
+            function pushMyTrade(side, sol, mcUsd, pnlSol) {
+                const row = { side, sol, trader: 'YOU', fullTrader: 'YOU', isMine: true, isDev: false, at: Date.now(), mcUsd, pnlSol };
+                pushTx._buf = pushTx._buf || [];
+                pushTx._buf.unshift(row);
+                if (pushTx._buf.length > 200) pushTx._buf.length = 200;
+                renderTxs();
+                renderChartAnnotations();
+            }
+            function pushChartTradeToast(side, sol, mcUsd, pnlSol) {
+                if (!chartFloatToastsEl) return;
+                const cls = side === 'buy' ? 'is-buy-pop' : 'is-sell-pop';
+                const label = side === 'buy' ? 'B' : 'S';
+                const pnlHtml = side === 'sell' && Number.isFinite(pnlSol)
+                    ? ' · PnL ' + (pnlSol >= 0 ? '+' : '') + pnlSol.toFixed(3) + ' SOL'
+                    : '';
+                const el = document.createElement('div');
+                el.className = 'chart-float-toast ' + cls;
+                el.innerHTML = '<strong>' + label + ' · ' + (side === 'buy' ? 'Bought' : 'Sold') + '</strong>'
+                    + (Number(sol) || 0).toFixed(3) + ' SOL · MC $' + formatCompactNumber(Number(mcUsd) || 0) + pnlHtml;
+                chartFloatToastsEl.prepend(el);
+                // cap to 4 live coasters, auto-expire after 6s
+                while (chartFloatToastsEl.querySelectorAll('.is-buy-pop,.is-sell-pop').length > 4) {
+                    const n = chartFloatToastsEl.querySelector('.is-buy-pop,.is-sell-pop:last-child');
+                    if (!n) break;
+                    n.remove();
+                }
+                setTimeout(() => { el.style.transition = 'opacity 400ms'; el.style.opacity = '0'; }, 5600);
+                setTimeout(() => { el.remove(); }, 6200);
+            }
+
+            function updateChartFloatToasts() {
+                if (!chartFloatToastsEl) return;
+                const pos = wallet.positions[MINT];
+                const hist = (wallet.history || []).filter((h) => h.mint === MINT);
+                const sells = hist.filter((h) => h.kind === 'sell' && Number(h.mcUsd) > 0);
+                const parts = [];
+                if (pos && pos.entryMcUsd > 0) {
+                    parts.push(
+                        '<div class="chart-float-toast is-entry"><strong>Entry</strong>'
+                        + 'Avg fill MC $' + formatCompactNumber(pos.entryMcUsd)
+                        + (pos.investedSol > 0 ? ' · ' + pos.investedSol.toFixed(3) + ' SOL in' : '')
+                        + '</div>'
+                    );
+                }
+                if (sells.length) {
+                    let sumMcSol = 0;
+                    let wsum = 0;
+                    sells.forEach((h) => {
+                        const sol = Number(h.sol) || 0;
+                        const mc = Number(h.mcUsd) || 0;
+                        if (sol > 0 && mc > 0) {
+                            sumMcSol += mc * sol;
+                            wsum += sol;
+                        }
+                    });
+                    const avgExitMc = wsum > 0 ? sumMcSol / wsum : Number(sells[sells.length - 1].mcUsd) || 0;
+                    const lastPnl = Number(sells[0].pnlSol);
+                    const pnlStr = Number.isFinite(lastPnl) ? (lastPnl >= 0 ? '+' : '') + lastPnl.toFixed(3) + ' SOL' : '—';
+                    parts.push(
+                        '<div class="chart-float-toast is-exit"><strong>Exit (avg)</strong>'
+                        + 'MC $' + formatCompactNumber(avgExitMc)
+                        + ' · last PnL ' + pnlStr
+                        + '</div>'
+                    );
+                }
+                // Keep transient B/S pop toasts; only replace the persistent entry/exit pills.
+                chartFloatToastsEl.querySelectorAll('.is-entry, .is-exit').forEach((n) => n.remove());
+                if (parts.length) {
+                    const wrap = document.createElement('div');
+                    wrap.innerHTML = parts.join('');
+                    // append persistent pills at the bottom so new pop toasts stay on top
+                    chartFloatToastsEl.append(...wrap.children);
+                }
+            }
+
+            function renderChartAnnotations() {
+                if (!USE_GECKOTERMINAL_EMBED && LW && seriesMain) {
+                    if (priceLineEntry) {
+                        try { seriesMain.removePriceLine(priceLineEntry); } catch {}
+                        priceLineEntry = null;
+                    }
+                    if (priceLineExit) {
+                        try { seriesMain.removePriceLine(priceLineExit); } catch {}
+                        priceLineExit = null;
+                    }
+                    const pos = wallet.positions[MINT];
+                    const LineStyle = LW.LineStyle;
+                    if (pos && pos.entryMcUsd > 0) {
+                        const entryPx = lineYFromMcUsd(pos.entryMcUsd);
+                        if (entryPx > 0) {
+                            priceLineEntry = seriesMain.createPriceLine({
+                                price: entryPx,
+                                color: '#26a69a',
+                                lineWidth: 1,
+                                lineStyle: LineStyle.Dashed,
+                                axisLabelVisible: true,
+                                title: 'Avg. Fill Price',
+                            });
+                        }
+                    }
+                    const sells = (wallet.history || []).filter((h) => h.mint === MINT && h.kind === 'sell' && Number(h.mcUsd) > 0);
+                    if (sells.length) {
+                        let sumMcSol = 0;
+                        let wsum = 0;
+                        sells.forEach((h) => {
+                            const sol = Number(h.sol) || 0;
+                            const mc = Number(h.mcUsd) || 0;
+                            if (sol > 0 && mc > 0) {
+                                sumMcSol += mc * sol;
+                                wsum += sol;
+                            }
+                        });
+                        const avgExitMc = wsum > 0 ? sumMcSol / wsum : Number(sells[sells.length - 1].mcUsd) || 0;
+                        const exitPx = lineYFromMcUsd(avgExitMc);
+                        if (exitPx > 0) {
+                            priceLineExit = seriesMain.createPriceLine({
+                                price: exitPx,
+                                color: '#ef5350',
+                                lineWidth: 1,
+                                lineStyle: LineStyle.Dashed,
+                                axisLabelVisible: true,
+                                title: 'Avg. Exit Price',
+                            });
+                        }
+                    }
+                    const hist = (wallet.history || []).filter((h) => h.mint === MINT && Number(h.mcUsd) > 0).sort((a, b) => a.at - b.at);
+                    const markers = [];
+                    hist.forEach((h) => {
+                        markers.push({
+                            time: snapTradeTimeToSeriesBarSec(h.at),
+                            position: h.kind === 'buy' ? 'belowBar' : 'aboveBar',
+                            color: h.kind === 'buy' ? '#26a69a' : '#ef5350',
+                            shape: 'circle',
+                            text: h.kind === 'buy' ? 'B' : 'S',
+                            size: 2,
+                        });
+                    });
+                    seriesMain.setMarkers(markers);
+                }
+                updateChartFloatToasts();
+            }
+
+            function formatAge(ms) {
+                const s = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+                if (s < 60) return s + 's';
+                const m = Math.floor(s / 60);
+                if (m < 60) return m + 'm';
+                const h = Math.floor(m / 60);
+                if (h < 24) return h + 'h';
+                return Math.floor(h / 24) + 'd';
+            }
+            function renderTxs() {
+                const buf = pushTx._buf || [];
+                let list = txFilter === 'mine' ? buf.filter((t) => t.isMine) : buf.slice();
+                if (txFilter === 'all') list = list.filter((t) => !t.isDev);
+                if (!list.length) {
+                    const msg = txFilter === 'mine' ? 'No trades yet' : 'Waiting for trades…';
+                    termTxListEl.innerHTML = '<div class="tx-empty">' + msg + '</div>';
+                    return;
+                }
+                const sym = String(token.symbol || 'TKN').replace(/^\$?/, '');
+                termTxListEl.innerHTML = list.map((tx) => {
+                    const extraCls = tx.isMine ? ' is-mine' : (tx.isDev ? ' is-dev' : '');
+                    const mc = Number(tx.mcUsd) || 0;
+                    const mcStr = mc > 0 ? formatCompactNumber(mc) : '—';
+                    const traderLabel = tx.isMine ? 'YOU' : (String(tx.trader || '').slice(0, 3) || '—');
+                    return '<div class="tx-row ' + tx.side + extraCls + '">'
+                        + '<span class="tx-sol">' + (Number(tx.sol) || 0).toFixed(3) + '</span>'
+                        + '<span class="tx-mc">' + mcStr + '</span>'
+                        + '<span class="tx-trader">' + traderLabel + '<span class="tx-badge">≈</span></span>'
+                        + '<span class="tx-age">' + formatAge(tx.at) + '</span>'
+                        + '</div>';
+                }).join('');
+            }
+
+            document.querySelectorAll('.tx-tab').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    txFilter = btn.dataset.txFilter || 'all';
+                    document.querySelectorAll('.tx-tab').forEach((b) => b.classList.toggle('is-active', b === btn));
+                    renderTxs();
+                });
+            });
+
+            function tradeEventTimeMs(data) {
+                const bt = Number(data.blockTime);
+                if (Number.isFinite(bt) && bt > 0) return bt < 1e12 ? bt * 1000 : bt;
+                const ts = Number(data.timestamp);
+                if (Number.isFinite(ts) && ts > 0) return ts < 1e12 ? ts * 1000 : ts;
+                return Date.now();
+            }
+
+            function handleTradeEvent(data) {
+                if (String(data.mint || '') !== MINT) return;
+                const pool = String(data.pool || '').toLowerCase();
+                if (pool.includes('pumpswap')) {
+                    token.migrated = true;
+                }
+                const tsMs = tradeEventTimeMs(data);
+                const mcSol = Number(data.marketCapSol);
+                let chartMcUsd = 0;
+                if (Number.isFinite(mcSol) && mcSol > 0) {
+                    token.marketCapSol = mcSol;
+                    if (solPriceUsd > 0) chartMcUsd = mcSol * solPriceUsd;
+                }
+                const displayMcUsd = chartMcUsd > 0 ? chartMcUsd : computeUsdMc();
+                if (chartMcUsd > 0) token.liveMcUsd = chartMcUsd;
+                else if (displayMcUsd > 0) token.liveMcUsd = displayMcUsd;
+                const chartPx = chartPriceUsdFromPumpEvent(data, chartMcUsd);
+                upsertChartSample(chartMcUsd, chartPx, tsMs);
+                const solAmt = Number(data.solAmount);
+                if (Number.isFinite(solAmt) && solAmt > 0) {
+                    token.volumeSol = (token.volumeSol || 0) + solAmt;
+                }
+                const side = String(data.txType || '').toLowerCase();
+                if (side === 'buy' || side === 'sell') {
+                    const fullTrader = String(data.traderPublicKey || data.user || '');
+                    const trader = fullTrader.slice(0, 4);
+                    const txSig = String(data.signature || data.tx || data.transaction || '').trim();
+                    if (!devWallet && side === 'buy' && fullTrader) {
+                        devWallet = fullTrader;
+                        (pushTx._buf || []).forEach((r) => {
+                            if (!r.isMine && r.fullTrader === devWallet) r.isDev = true;
+                        });
+                    }
+                    pushTx(side, solAmt || 0, trader, false, {
+                        fullTrader,
+                        at: tsMs,
+                        mcUsd: displayMcUsd > 0 ? displayMcUsd : computeUsdMc(),
+                        tx: txSig,
+                    });
+                }
+                renderStats();
+                renderPosition();
+                renderWalletHud();
+            }
+
+            function handleMigrationEvent(data) {
+                if (String(data?.mint || '') !== MINT) return;
+                token.migrated = true;
+            }
+
+            function handleWsMessage(raw) {
+                let data;
+                try { data = JSON.parse(raw); } catch { return; }
+                if (!data || typeof data !== 'object') return;
+                const txType = data.txType;
+                if (txType === 'buy' || txType === 'sell') handleTradeEvent(data);
+                else if (txType === 'migrate' || txType === 'migration' || data.migrated === true) handleMigrationEvent(data);
+                else if (data.mint && data.pool) {
+                    const pool = String(data.pool).toLowerCase();
+                    if (pool.includes('pumpswap')) handleMigrationEvent(data);
+                }
+            }
+
+            function connectWs() {
+                try { ws = new WebSocket(PUMPPORTAL_WS_URL); }
+                catch { scheduleReconnect(); return; }
+                ws.addEventListener('open', () => {
+                    wsReconnectAttempts = 0;
+                    wsSend({ method: 'subscribeTokenTrade', keys: [MINT] });
+                    wsSend({ method: 'subscribeMigration' });
+                });
+                ws.addEventListener('message', (evt) => handleWsMessage(evt.data));
+                ws.addEventListener('close', () => scheduleReconnect());
+                ws.addEventListener('error', () => { try { ws.close(); } catch {} });
+            }
+            function scheduleReconnect() {
+                if (wsReconnectTimer) return;
+                const delay = Math.min(30000, 1000 * Math.pow(2, wsReconnectAttempts++));
+                wsReconnectTimer = window.setTimeout(() => { wsReconnectTimer = null; connectWs(); }, delay);
+            }
+
+            // ---- demo portfolio panel (balance click) ----
+            const positionsPanel = document.getElementById('positions-panel');
+            const positionsListEl = document.getElementById('positions-list');
+            const walletHudTrigger = document.getElementById('wallet-hud-trigger');
+            function closePortfolioPanel() {
+                if (!positionsPanel) return;
+                positionsPanel.hidden = true;
+                walletHudTrigger?.setAttribute('aria-expanded', 'false');
+            }
+            walletHudTrigger?.addEventListener('click', () => {
+                if (!positionsPanel) return;
+                positionsPanel.hidden = !positionsPanel.hidden;
+                walletHudTrigger.setAttribute('aria-expanded', positionsPanel.hidden ? 'false' : 'true');
+                if (!positionsPanel.hidden) renderDemoPortfolio();
+            });
+            document.getElementById('positions-close')?.addEventListener('click', closePortfolioPanel);
+            document.getElementById('portfolio-modal-backdrop')?.addEventListener('click', closePortfolioPanel);
+
+            document.getElementById('portfolio-share-7d-btn')?.addEventListener('click', async () => {
+                try {
+                    if (!(await ensurePnlHandleSet())) return;
+                    await loadPnlCardTemplate();
+                    const canvas = await buildWallet7dPnlCardCanvas();
+                    if (!canvas) return;
+                    showPnlCardModal(canvas, 'wallet-7d-pnl');
+                } catch (err) {
+                    console.warn('[pnl-card] 7d wallet card failed', err);
+                    toast('Could not load PnL template', 'is-err');
+                }
+            });
+            document.getElementById('terminal-back-btn')?.addEventListener('click', () => {
+                if (window.history.length > 1) window.history.back();
+                else window.location.href = 'demo-trading.html';
+            });
+
+            function renderPositionsList() {
+                if (!positionsListEl) return;
+                const mints = Object.keys(wallet.positions).filter((m) => {
+                    const p = wallet.positions[m];
+                    return p && Number(p.investedSol) >= MIN_OPEN_POSITION_SOL;
+                });
+                if (!mints.length) {
+                    positionsListEl.innerHTML = '<div class="tx-empty" style="padding:14px;">No open positions</div>';
+                    return;
+                }
+                positionsListEl.innerHTML = mints.map((mint) => {
+                    const pos = wallet.positions[mint];
+                    const dex = dexMintCache.get(mint);
+                    if (dex?.symbol && !pos.symbol) pos.symbol = dex.symbol;
+                    if (dex?.name && !pos.name) pos.name = dex.name;
+                    const liveMc = mint === MINT ? (computeUsdMc() || 0) : 0;
+                    const dexMc = Number(dex?.mcUsd) || 0;
+                    const lastMc = Number(pos.lastMcUsd) || 0;
+                    const mc = liveMc > 0 ? liveMc : (dexMc > 0 ? dexMc : lastMc);
+                    const entry = Number(pos.entryMcUsd) || 0;
+                    const ratio = mc > 0 && entry > 0 ? mc / entry : 1;
+                    const unreal = pos.investedSol * (ratio - 1);
+                    const pct = (ratio - 1) * 100;
+                    const cls = unreal >= 0 ? 'is-pos' : 'is-neg';
+                    const sym = (pos.symbol || 'TKN').replace(/^\$?/, '$');
+                    return ''
+                        + '<div class="position-item" data-open-mint="' + escapeHtml(mint) + '">'
+                        + '<span class="pi-sym">' + escapeHtml(sym) + '</span>'
+                        + '<span class="pi-pnl ' + cls + '">' + fmtSol(unreal) + ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%)</span>'
+                        + '<span class="pi-meta">' + pos.investedSol.toFixed(3) + ' SOL · entry ' + (entry > 0 ? '$' + formatCompactNumber(entry) : '—') + ' · now ' + (mc > 0 ? '$' + formatCompactNumber(mc) : '—') + '</span>'
+                        + '</div>';
+                }).join('');
+            }
+            positionsListEl?.addEventListener('click', (e) => {
+                const item = e.target.closest('[data-open-mint]');
+                if (!item) return;
+                const mint = item.getAttribute('data-open-mint');
+                positionsPanel.hidden = true;
+                if (mint === MINT) return;
+                if (wallet.positions[mint]) {
+                    try {
+                        sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify({
+                            mint,
+                            symbol: wallet.positions[mint].symbol,
+                            name: wallet.positions[mint].name,
+                            image_uri: wallet.positions[mint].image_uri
+                        }));
+                    } catch {}
+                }
+                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(mint);
+            });
+
+            // hash change -> reload with new mint
+            window.addEventListener('hashchange', () => { window.location.reload(); });
+
+            // seed past trades for THIS mint into the tx buffer (newest first)
+            (function seedMyTrades() {
+                pushTx._buf = pushTx._buf || [];
+                const mine = (wallet.history || []).filter((h) => h.mint === MINT);
+                mine.forEach((h) => {
+                    pushTx._buf.push({
+                        side: h.kind,
+                        sol: h.sol,
+                        trader: 'YOU',
+                        fullTrader: 'YOU',
+                        isMine: true,
+                        isDev: false,
+                        at: h.at,
+                        mcUsd: h.mcUsd,
+                        pnlSol: h.pnlSol
+                    });
+                });
+                pushTx._buf.sort((a, b) => b.at - a.at);
+            })();
+
+            // Historical trades: Solana Tracker GET /trades/{token} (see OpenAPI — use sortDirection, not sortBy/limit)
+            async function seedHistoricalTrades() {
+                if (!SOLANA_TRACKER_API_KEY) {
+                    console.warn('[SolanaTracker] Set window.LYKEION_SECRETS.solanaTracker (e.g. via scripts/local-secrets.js) to load trades.');
+                    return;
+                }
+                const url = 'https://data.solanatracker.io/trades/' + encodeURIComponent(MINT) + '?sortDirection=DESC';
+                try {
+                    const res = await fetch(url, {
+                        cache: 'no-store',
+                        headers: { 'x-api-key': SOLANA_TRACKER_API_KEY },
+                    });
+                    if (!res.ok) {
+                        console.warn('[SolanaTracker] trades', res.status, MINT);
+                        if (!pushTx._buf?.length && termTxListEl) {
+                            termTxListEl.innerHTML = '<div class="tx-empty">Could not load trades (' + res.status + ')</div>';
+                        }
+                        return;
+                    }
+                    const json = await res.json();
+                    const trades = Array.isArray(json?.trades)
+                        ? json.trades
+                        : Array.isArray(json)
+                            ? json
+                            : [];
+                    if (!trades.length) {
+                        if (!pushTx._buf?.length) renderTxs();
+                        return;
+                    }
+
+                    const chronological = trades.slice().sort((a, b) => {
+                        const ta = Number(a.time ?? a.timestamp ?? 0);
+                        const tb = Number(b.time ?? b.timestamp ?? 0);
+                        return ta - tb;
+                    });
+                    for (const t of chronological) {
+                        const side = String(t.type || t.txType || '').toLowerCase();
+                        const w = String(t.wallet || t.trader || t.traderPublicKey || '');
+                        if (side === 'buy' && w) {
+                            devWallet = w;
+                            break;
+                        }
+                    }
+
+                    // Fold new trades into candle buckets incrementally (no full rebuild, no fitContent)
+                    // so user's pan/zoom state survives the 4s refresh.
+                    chronological.forEach((t) => {
+                        const tsRaw = Number(t.time ?? t.timestamp ?? 0);
+                        const at = tsRaw > 1e12 ? tsRaw : (tsRaw > 0 ? tsRaw * 1000 : Date.now());
+                        const mcUsd = mcUsdFromTradePayload(t, 0);
+                        const px = chartPriceUsdFromSolanaTrade(t);
+                        const y = px > 0 ? px : (mcUsd > 0 ? mcUsdToChartPrice(mcUsd) : 0);
+                        if (!(y > 0)) return;
+                        if (rawChartPoints.some((r) => r.at === at && r.priceUsd === y)) return;
+                        recordRawSample({ at, mcUsd: mcUsd || 0, priceUsd: px || 0 });
+                        const bt = Math.floor(at / 1000);
+                        const bucketTime = Math.floor(bt / chartBucketSec) * chartBucketSec;
+                        let bar = candleBuckets.get(bucketTime);
+                        if (!bar) {
+                            bar = { time: bucketTime, open: y, high: y, low: y, close: y };
+                            candleBuckets.set(bucketTime, bar);
+                        } else {
+                            bar.high = Math.max(bar.high, y);
+                            bar.low = Math.min(bar.low, y);
+                            bar.close = y;
+                        }
+                    });
+                    flushBucketsToMainSeries(false);
+
+                    const newest = chronological.length ? chronological[chronological.length - 1] : null;
+                    if (newest) {
+                        const mcNew = mcUsdFromTradePayload(newest, 0);
+                        const pxNew = chartPriceUsdFromSolanaTrade(newest);
+                        if (mcNew > 0) token.liveMcUsd = mcNew;
+                        if (Number.isFinite(pxNew) && pxNew > 0) token.lastPriceUsd = pxNew;
+                    }
+                    const fbMc = computeUsdMc();
+                    const refPx = Number(token.lastPriceUsd) || 0;
+
+                    trades.forEach((t) => {
+                        const side = String(t.type || t.txType || '').toLowerCase();
+                        if (side !== 'buy' && side !== 'sell') return;
+                        const fullTrader = String(t.wallet || t.trader || t.traderPublicKey || '');
+                        const trader = fullTrader.slice(0, 4);
+                        const sol = Number(t.volumeSol ?? t.solAmount ?? t.amountSol ?? 0);
+                        const tsRaw = Number(t.time ?? t.timestamp ?? 0);
+                        const at = tsRaw > 1e12 ? tsRaw : (tsRaw > 0 ? tsRaw * 1000 : Date.now());
+                        // Prefer per-trade MC; otherwise derive from priceUsd vs current price/MC ratio.
+                        let mcUsd = mcUsdFromTradePayload(t, 0);
+                        if (!(mcUsd > 0)) {
+                            const px = chartPriceUsdFromSolanaTrade(t);
+                            if (px > 0 && refPx > 0 && fbMc > 0) mcUsd = (px / refPx) * fbMc;
+                        }
+                        if (!(mcUsd > 0)) mcUsd = fbMc;
+                        const txSig = String(t.tx || t.signature || '').trim();
+                        pushTx(side, sol, trader, false, {
+                            fullTrader,
+                            at,
+                            mcUsd,
+                            tx: txSig,
+                        });
+                    });
+
+                    (pushTx._buf || []).forEach((r) => {
+                        if (!r.isMine && devWallet && r.fullTrader === devWallet) r.isDev = true;
+                    });
+                    renderTxs();
+                    renderStats();
+                    renderPosition();
+                    renderWalletHud();
+                    renderChartAnnotations();
+                } catch (err) {
+                    console.warn('[SolanaTracker] trades fetch failed', err);
+                    if (!pushTx._buf?.length && termTxListEl) {
+                        termTxListEl.innerHTML = '<div class="tx-empty">Could not load trades</div>';
+                    }
+                }
+            }
+
+            // Fetch OHLC candles from Solana Tracker and seed full OHLC directly into buckets
+            async function seedHistoricalCandles() {
+                if (!SOLANA_TRACKER_API_KEY) return;
+                try {
+                    const bucketLabel = chartBucketSec <= 5 ? '5s'
+                        : chartBucketSec <= 15 ? '15s'
+                        : chartBucketSec <= 60 ? '1m'
+                        : chartBucketSec <= 300 ? '5m' : '15m';
+                    const url = 'https://data.solanatracker.io/chart/' + encodeURIComponent(MINT)
+                        + '?type=' + bucketLabel;
+                    const res = await fetch(url, {
+                        cache: 'no-store',
+                        headers: { 'x-api-key': SOLANA_TRACKER_API_KEY },
+                    });
+                    if (!res.ok) return;
+                    const json = await res.json();
+                    const arr = Array.isArray(json?.oclhv) ? json.oclhv
+                        : Array.isArray(json?.ohlcv) ? json.ohlcv
+                        : Array.isArray(json?.data) ? json.data
+                        : Array.isArray(json) ? json : [];
+                    if (!arr.length) return;
+
+                    const bars = [];
+                    arr.forEach((c) => {
+                        const t = Number(c.time ?? c.timestamp ?? c.t ?? 0);
+                        if (!t) return;
+                        const atSec = t > 1e12 ? Math.floor(t / 1000) : Math.floor(t);
+                        const open = Number(c.open ?? c.o ?? 0);
+                        const high = Number(c.high ?? c.h ?? 0);
+                        const low = Number(c.low ?? c.l ?? 0);
+                        const close = Number(c.close ?? c.c ?? 0);
+                        if (!(close > 0)) return;
+                        const o = open > 0 ? open : close;
+                        const h = high > 0 ? high : Math.max(o, close);
+                        const lo = low > 0 ? low : Math.min(o, close);
+                        const bucketTime = Math.floor(atSec / chartBucketSec) * chartBucketSec;
+                        bars.push({ time: bucketTime, open: o, high: h, low: lo, close });
+                    });
+                    if (!bars.length) return;
+                    bars.sort((a, b) => a.time - b.time);
+
+                    candleBuckets.clear();
+                    let prev = null;
+                    bars.forEach((b) => {
+                        // gap-fill with flat bars so time axis stays contiguous
+                        if (prev) {
+                            let t = prev.time + chartBucketSec;
+                            while (t < b.time) {
+                                candleBuckets.set(t, makeFlatBar(t, prev.close));
+                                t += chartBucketSec;
+                            }
+                        }
+                        candleBuckets.set(b.time, b);
+                        prev = b;
+                    });
+
+                    // preserve any raw samples already ingested (recent WS trades) onto the tail
+                    if (Array.isArray(rawChartPoints) && rawChartPoints.length) {
+                        const lastBarTime = prev ? prev.time : 0;
+                        rawChartPoints.forEach((n) => {
+                            if (!(n.priceUsd > 0)) return;
+                            const tSec = Math.floor(n.at / 1000);
+                            const bt = Math.floor(tSec / chartBucketSec) * chartBucketSec;
+                            if (bt <= lastBarTime) return;
+                            let bar = candleBuckets.get(bt);
+                            if (!bar) {
+                                bar = makeFlatBar(bt, n.priceUsd);
+                                candleBuckets.set(bt, bar);
+                            } else {
+                                bar.high = Math.max(bar.high, n.priceUsd);
+                                bar.low = Math.min(bar.low, n.priceUsd);
+                                bar.close = n.priceUsd;
+                            }
+                        });
+                    }
+
+                    flushBucketsToMainSeries(true);
+                } catch (err) {
+                    console.warn('[SolanaTracker] chart seed failed', err);
+                }
+            }
+
+            // ---- initial render + loops ----
+            pruneDustPositions();
+            renderHeader();
+            renderStats();
+            renderPosition();
+            renderTxs();
+            renderWalletHud();
+            renderChartAnnotations();
+
+            refreshSolPrice()
+                .then(() => {
+                    renderPosition();
+                    return refreshGeckoStats();
+                })
+                .then(() => seedHistoricalCandles())
+                .then(() => seedHistoricalTrades())
+                .catch(() => {});
+            refreshDexScreenerSocials();
+            connectWs();
+            window.setInterval(refreshSolPrice, SOL_PRICE_REFRESH_MS);
+            window.setInterval(refreshGeckoStats, GECKO_STATS_REFRESH_MS);
+            window.setInterval(refreshDexScreenerSocials, DEX_SOCIALS_REFRESH_MS);
+            window.setInterval(seedHistoricalTrades, 1500);
+            window.setInterval(() => {
+                renderStats();
+                renderPosition();
+                renderWalletHud();
+                renderChartAnnotations();
+            }, 1500);
+        })();
+    </script>
+</body>
+</html>
