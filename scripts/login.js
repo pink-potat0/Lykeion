@@ -31,11 +31,11 @@ document.querySelectorAll('.password-toggle').forEach(toggle => {
 
     if (passwordInput.type === 'password') {
       passwordInput.type = 'text';
-      eyeIcon.src = 'icons8-closed-eye-48.png';
+      eyeIcon.src = '../assets/icons/icons8-closed-eye-48.png';
       eyeIcon.alt = 'Hide password';
     } else {
       passwordInput.type = 'password';
-      eyeIcon.src = 'icons8-eye-24.png';
+      eyeIcon.src = '../assets/icons/icons8-eye-24.png';
       eyeIcon.alt = 'Show password';
     }
   });
