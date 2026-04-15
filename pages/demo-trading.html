@@ -112,9 +112,53 @@
             overflow: hidden;
         }
         @media (max-width: 640px) {
-            .token-search { margin: 0 8px; }
             .demo-token-meta strong { font-size: 13px; }
             .demo-token-meta .demo-token-name { font-size: 12px; }
+            body.page-demo-trading .navbar {
+                flex-wrap: wrap;
+                row-gap: 8px;
+                column-gap: 8px;
+                padding: 10px 14px;
+                min-height: 44px;
+            }
+            body.page-demo-trading .nav-logo {
+                font-size: 16px;
+                white-space: nowrap;
+                flex: 0 1 auto;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                order: 1;
+            }
+            body.page-demo-trading .navbar > div:last-child {
+                margin-left: auto;
+                flex-shrink: 0;
+                order: 2;
+            }
+            body.page-demo-trading .token-search {
+                order: 3;
+                flex: 1 1 100%;
+                margin: 0;
+            }
+            body.page-demo-trading .token-search input {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+            body.page-demo-trading .wallet-hud {
+                padding: 6px 9px;
+                font-size: 12px;
+                white-space: nowrap;
+            }
+            body.page-demo-trading .demo-board-main {
+                margin-top: 140px;
+            }
+            body.page-demo-trading .demo-mobile-tabs {
+                margin-top: 14px;
+                margin-bottom: 14px;
+            }
+            body.page-demo-trading .demo-tab-btn {
+                font-size: 1.1rem;
+            }
         }
 
         .wallet-hud {
@@ -143,7 +187,8 @@
         .demo-token-row { cursor: pointer; }
         .demo-token-row.is-empty { cursor: default; }
         .demo-token-row.has-position { box-shadow: inset 3px 0 0 #4ade80; }
-        .demo-token-buy { position: relative; z-index: 2; }
+        button.demo-token-buy { position: relative; z-index: 2; cursor: pointer !important; }
+        button.demo-token-buy:hover { filter: brightness(1.1); cursor: pointer !important; }
 
         .toast-stack {
             position: fixed;
@@ -494,7 +539,7 @@
     <div class="background-pattern"></div>
 
     <nav class="navbar">
-        <span class="nav-logo">Lykeion</span>
+        <span class="nav-logo">Lykeion Terminal</span>
         <div class="token-search" role="search">
             <input id="token-search-input" type="search" autocomplete="off" spellcheck="false" placeholder="Search pump.fun tokens by name, symbol or CA..." />
             <div id="token-search-results" class="token-search-results" hidden></div>

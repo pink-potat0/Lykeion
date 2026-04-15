@@ -99,6 +99,7 @@ body {
     opacity: 0.35;
 }
 
+
 /* Minimal ambient depth — neutral only */
 .cursor-glow {
     position: fixed;
@@ -117,6 +118,29 @@ body {
 /* Show grid when mouse is hovering - always show on body */
 body .background-pattern {
     opacity: 1;
+}
+
+/* Landing page: slightly brighter grid with subtle glow */
+body.page-home .background-pattern {
+    background-image:
+        repeating-linear-gradient(
+            90deg,
+            transparent 0,
+            transparent 63px,
+            rgba(var(--accent-rgb), 0.22) 63px,
+            rgba(var(--accent-rgb), 0.22) 64px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent 0,
+            transparent 63px,
+            rgba(var(--accent-rgb), 0.22) 63px,
+            rgba(var(--accent-rgb), 0.22) 64px
+        );
+}
+body.page-home .background-pattern::after {
+    filter: blur(2px);
+    opacity: 0.45;
 }
 
 /* Make sure content sits above the glow */
@@ -250,41 +274,46 @@ h1 {
     letter-spacing: 0;
 }
 
-/* Button */
+/* Button — same glass effect as .navbar */
 .btn {
     position: relative;
     margin-top: 36px;
+    margin-bottom: 40px;
     width: auto;
-    min-width: 200px;
+    min-width: 220px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(24px) saturate(180%) brightness(1.05);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(12, 12, 14, 0.38);
+    backdrop-filter: blur(36px) saturate(200%) brightness(1.08);
+    -webkit-backdrop-filter: blur(36px) saturate(200%) brightness(1.08);
+    border: 1px solid rgba(255, 255, 255, 0.09);
     padding: 14px 28px;
     height: auto;
-    min-height: 48px;
-    border-radius: 8px;
+    min-height: 52px;
+    border-radius: 10px;
     font-family: "Inter", sans-serif;
     font-size: 15px;
     font-weight: 600;
-    margin-bottom: 40px;
     animation: slideDown 0.5s ease-out;
-    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.11),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
-
 .btn:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    background: rgba(20, 20, 24, 0.48);
+    border-color: rgba(255, 255, 255, 0.16);
     transform: translateY(-2px);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
-
 .btn:active {
     transform: translateY(1px);
 }

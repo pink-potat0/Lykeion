@@ -245,7 +245,7 @@ function getCapabilitiesResponse() {
     "3. Live price widget: ask for prices like BTC, ETH, SOL, XRP, BNB, DOGE, TRX, USDT, USDC, and HYPE.\n" +
     "4. Wallet PnL analysis card: send a wallet address to get balance, 7D net PnL, and top token trades.\n" +
     "5. Bubble map shortcut: token cards include a Bubble Map button for holder-structure view.\n\n" +
-    "Try: \"what is this token <ca>\", \"analyze wallet <address>\", \"price of SOL\", or any Solana question."
+    "Try: \"what is this token <ca>\", \"analyze this wallet <address>\", \"price of SOL\", or any Solana question."
   );
 }
 

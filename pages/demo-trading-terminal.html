@@ -31,23 +31,12 @@
 
         /* ===== Navbar (own row; overrides style.css .page-demo-trading floating pill) ===== */
         body.page-demo-trading .navbar {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 14px 24px;
-            background: #0a0a10;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            position: relative !important;
-            left: auto !important;
-            right: auto !important;
-            top: auto !important;
-            width: 100%;
-            max-width: none;
-            margin: 0;
-            border-radius: 0;
-            box-sizing: border-box;
-            z-index: 10;
+            /* Match memescope floating pill: rounded, inset from edges */
+            left: 12px;
+            right: 12px;
+            top: 10px;
+            min-height: 44px;
+            padding: 10px 14px;
         }
         body.page-demo-trading .nav-spacer {
             display: none;
@@ -125,6 +114,27 @@
         .ticker-strip .t-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .ticker-strip .t-ticker { font-weight: 700; font-size: 26px; letter-spacing: -0.35px; line-height: 1.1; }
         .ticker-strip .t-name { font-size: 14px; opacity: 0.55; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ticker-strip .t-copy-ca {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            color: #cfd1d6;
+            font-family: "JetBrains Mono", ui-monospace, monospace;
+            font-size: 11px;
+            line-height: 1;
+            cursor: pointer;
+            max-width: 260px;
+            transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+        }
+        .ticker-strip .t-copy-ca:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.22); color: #fff; }
+        .ticker-strip .t-copy-ca.is-copied { color: #4ade80; border-color: rgba(74,222,128,0.45); }
+        .ticker-strip .t-copy-ca-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+        .ticker-strip .t-copy-ca-icon { opacity: 0.8; }
 
         .ticker-stats {
             display: flex;
@@ -164,7 +174,7 @@
             display: grid;
             grid-template-columns: 1fr 360px;
             gap: 16px;
-            padding: 16px 24px 24px;
+            padding: 76px 24px 24px;
             min-height: 0;
             overflow: hidden;
         }
@@ -1007,7 +1017,7 @@
         body.page-demo-trading.term-chart-only .terminal-fab-back { z-index: 6000; }
         body.page-demo-trading.term-chart-only .term-main {
             display: block;
-            padding: 0;
+            padding: 64px 0 0;
             min-height: 100vh;
             max-width: none;
         }
@@ -1039,38 +1049,33 @@
              * only logo + nav-right participated and the logo sat in the wide left column (off-center).
              */
             body.page-demo-trading .navbar {
-                display: grid !important;
-                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                display: flex !important;
                 align-items: center;
-                column-gap: 10px;
-                padding: max(10px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) 12px max(14px, env(safe-area-inset-left, 0px));
-                min-height: 48px;
+                column-gap: 8px;
+                padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px));
+                min-height: 44px;
             }
             body.page-demo-trading .nav-spacer {
-                display: block !important;
-                grid-column: 1;
-                width: 100% !important;
-                min-width: 0 !important;
-                flex: initial !important;
-                min-height: 1px;
-                visibility: hidden;
+                display: none !important;
             }
             body.page-demo-trading .nav-logo {
-                grid-column: 2;
-                justify-self: center;
-                font-size: 20px;
+                font-size: 16px;
                 white-space: nowrap;
+                flex: 0 1 auto;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             body.page-demo-trading .nav-right {
-                grid-column: 3;
-                justify-self: end;
+                margin-left: auto;
                 justify-content: flex-end;
-                margin-left: 0;
-                min-width: 0;
+                flex-shrink: 0;
+                gap: 8px;
             }
             body.page-demo-trading .wallet-hud {
-                padding: 7px 10px;
+                padding: 6px 9px;
                 font-size: 12px;
+                white-space: nowrap;
             }
             body.page-demo-trading .nav-right .x-icon {
                 width: 20px;
@@ -1085,8 +1090,8 @@
                 flex-direction: column;
                 grid-template-columns: unset;
                 overflow: visible;
-                /* Room for fixed .terminal-fab-back so trade chips aren’t under it */
-                padding: 0 0 max(88px, calc(72px + env(safe-area-inset-bottom, 0px)));
+                /* Room for fixed navbar at top and fixed .terminal-fab-back at bottom */
+                padding: 92px 0 max(88px, calc(72px + env(safe-area-inset-bottom, 0px)));
                 gap: 0;
                 min-height: 0;
             }
@@ -1122,6 +1127,16 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
+            .ticker-strip .t-copy-ca {
+                margin-top: 0;
+                margin-left: 4px;
+                padding: 3px 6px;
+                font-size: 9px;
+                max-width: 90px;
+                flex: 0 0 auto;
+                align-self: center;
+            }
+            .ticker-strip .t-copy-ca-icon { font-size: 11px; }
             .ticker-stats {
                 flex-wrap: nowrap;
                 gap: 6px 10px;
@@ -1412,7 +1427,7 @@
 
     <nav class="navbar">
         <div class="nav-spacer" aria-hidden="true"></div>
-        <a href="demo-trading.html" class="nav-logo">Lykeion</a>
+        <a href="demo-trading.html" class="nav-logo">Lykeion Terminal</a>
         <div class="nav-right">
             <button type="button" class="wallet-hud wallet-hud--trigger" id="wallet-hud-trigger" aria-expanded="false" aria-controls="positions-panel" title="Demo portfolio">
                 <span class="wh-bal" id="wh-bal">5.000 SOL</span>
@@ -1473,6 +1488,10 @@
                 <div class="t-title">
                     <span class="t-ticker" id="term-ticker">$TKN</span>
                     <span class="t-name" id="term-name">tokenname</span>
+                    <button type="button" class="t-copy-ca" id="term-copy-ca" title="Copy contract address" aria-label="Copy contract address">
+                        <span class="t-copy-ca-label" id="term-copy-ca-label">—</span>
+                        <span class="t-copy-ca-icon" aria-hidden="true">⧉</span>
+                    </button>
                 </div>
                 <div class="ticker-stats">
                     <div class="stat stat-mc">
@@ -1908,6 +1927,44 @@
             const termVolEl = document.getElementById('term-vol');
             const termLiqEl = document.getElementById('term-liq');
             const termLinksEl = document.getElementById('term-links');
+            const termCopyCaEl = document.getElementById('term-copy-ca');
+            const termCopyCaLabelEl = document.getElementById('term-copy-ca-label');
+            if (termCopyCaEl) {
+                termCopyCaEl.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const text = String(MINT || '').trim();
+                    if (!text) return;
+                    let ok = false;
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(text);
+                            ok = true;
+                        }
+                    } catch { /* fall through to legacy */ }
+                    if (!ok) {
+                        try {
+                            const ta = document.createElement('textarea');
+                            ta.value = text;
+                            ta.style.position = 'fixed';
+                            ta.style.opacity = '0';
+                            document.body.appendChild(ta);
+                            ta.select();
+                            ok = document.execCommand('copy');
+                            document.body.removeChild(ta);
+                        } catch { ok = false; }
+                    }
+                    if (ok) {
+                        termCopyCaEl.classList.add('is-copied');
+                        const prev = termCopyCaLabelEl ? termCopyCaLabelEl.textContent : '';
+                        if (termCopyCaLabelEl) termCopyCaLabelEl.textContent = 'copied!';
+                        setTimeout(() => {
+                            termCopyCaEl.classList.remove('is-copied');
+                            if (termCopyCaLabelEl && prev) termCopyCaLabelEl.textContent = prev;
+                        }, 1200);
+                    }
+                });
+            }
             const termPositionEl = document.getElementById('term-position');
             const termAmountEl = document.getElementById('term-amount');
             const termAmountSuffix = document.getElementById('term-amount-suffix');
@@ -2694,6 +2751,10 @@
                 if (token.telegram) links.push('<a href="' + escapeHtml(token.telegram) + '" target="_blank" rel="noopener">TG</a>');
                 if (token.discord) links.push('<a href="' + escapeHtml(token.discord) + '" target="_blank" rel="noopener">DC</a>');
                 termLinksEl.innerHTML = links.join('');
+                if (termCopyCaLabelEl) {
+                    const m = String(MINT || '');
+                    termCopyCaLabelEl.textContent = m ? (m.length > 10 ? (m.slice(0, 4) + '…' + m.slice(-4)) : m) : '—';
+                }
             }
 
             function renderStats() {
