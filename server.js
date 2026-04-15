@@ -10,6 +10,20 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Legacy flat-file URLs → new /pages/ location (so old bookmarks keep working).
+const LEGACY_PAGES = [
+  'dashboard.html',
+  'login.html',
+  'lykeion-ai.html',
+  'lycuem-course.html',
+  'demo-trading.html',
+  'demo-trading-terminal.html',
+];
+LEGACY_PAGES.forEach((name) => {
+  app.get('/' + name, (req, res) => res.redirect(301, '/pages/' + name));
+});
+
 app.use(express.static(path.join(__dirname)));
 
 // Initialize OpenAI (fail gracefully so server still starts)
