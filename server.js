@@ -380,6 +380,32 @@ async function fetchLatestPumpfunTokens(limit = 120) {
   return [];
 }
 
+// Proxy for lykeion-ai.js (browser): uses server OPENAI_API_KEY so the client never needs a key.
+app.post('/api/openai-chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!Array.isArray(messages) || !messages.length) {
+      return res.status(400).json({ error: 'messages array is required' });
+    }
+    if (!openai) {
+      return res.status(500).json({
+        error: 'Server is missing OPENAI_API_KEY. Add it in .env (local) or Vercel environment variables.',
+      });
+    }
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+    });
+    const text = completion.choices[0]?.message?.content?.trim() || '';
+    res.json({ text });
+  } catch (error) {
+    console.error('openai-chat error:', error);
+    res.status(500).json({
+      error: error.message || 'OpenAI request failed',
+    });
+  }
+});
+
 // Main chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {

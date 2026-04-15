@@ -1722,9 +1722,41 @@ window.getTopTokensForLaunchpad = async function getTopTokensForLaunchpad(launch
 };
 
 async function requestOpenAIReply(messages) {
-  if (!OPENAI_API_KEY) {
-    throw new Error("OpenAI API key is not configured. Set window.LYKEION_SECRETS.openai for local dev, or use the backend proxy.");
+  const base =
+    typeof window !== "undefined" && window.LYKEION_API_BASE
+      ? String(window.LYKEION_API_BASE).replace(/\/$/, "")
+      : "";
+  const proxyUrl = `${base}/api/openai-chat`;
+
+  try {
+    const response = await fetch(proxyUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages }),
+    });
+    const ct = response.headers.get("content-type") || "";
+    const data = ct.includes("application/json") ? await response.json() : {};
+    if (response.ok && typeof data.text === "string") {
+      return data.text.trim();
+    }
+    if (!response.ok && data && typeof data.error === "string") {
+      throw new Error(data.error);
+    }
+  } catch (err) {
+    const msg = err && err.message ? String(err.message) : "";
+    if (msg && !msg.includes("Failed to fetch") && !msg.includes("NetworkError")) {
+      throw err;
+    }
   }
+
+  if (!OPENAI_API_KEY) {
+    throw new Error(
+      "OpenAI is not configured. Start the app with the Node server (npm run dev), set OPENAI_API_KEY in .env, " +
+        "and open this page from the server URL (e.g. http://localhost:3000/pages/lykeion-ai.html). " +
+        "Optional: set window.LYKEION_SECRETS.openai only for local browser-direct calls (not recommended for production)."
+    );
+  }
+
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
     headers: {
