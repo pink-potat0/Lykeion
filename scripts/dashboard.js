@@ -160,7 +160,7 @@ window.__firebaseReadyPromise
         }
       } else {
         // Not logged in, redirect to login
-        window.location.href = 'login.html';
+        window.location.href = 'login';
       }
     });
   })

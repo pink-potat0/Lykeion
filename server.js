@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Legacy flat-file URLs → new /pages/ location (so old bookmarks keep working).
+// Legacy flat-file URLs → clean /pages/ URLs (no .html).
 const LEGACY_PAGES = [
   'dashboard.html',
   'login.html',
@@ -21,7 +21,33 @@ const LEGACY_PAGES = [
   'demo-trading-terminal.html',
 ];
 LEGACY_PAGES.forEach((name) => {
-  app.get('/' + name, (req, res) => res.redirect(301, '/pages/' + name));
+  app.get('/' + name, (req, res) => {
+    const slug = name.replace(/\.html$/, '');
+    res.redirect(301, '/pages/' + slug);
+  });
+});
+
+// /pages/foo.html → /pages/foo (preserve query string).
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  const pathname = req.path || '';
+  const m = pathname.match(/^(\/pages\/[^/]+)\.html$/);
+  if (!m) return next();
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  return res.redirect(301, m[1] + qs);
+});
+
+// Extensionless routes: /pages/login → pages/login.html
+app.get('/pages/:page', (req, res, next) => {
+  const { page } = req.params;
+  if (!page || page.includes('.')) return next();
+  const filePath = path.join(__dirname, 'pages', `${page}.html`);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      if (err.code === 'ENOENT') return next();
+      return next(err);
+    }
+  });
 });
 
 app.use(express.static(path.join(__dirname)));

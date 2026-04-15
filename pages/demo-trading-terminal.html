@@ -1429,7 +1429,7 @@
 
     <nav class="navbar">
         <div class="nav-spacer" aria-hidden="true"></div>
-        <a href="demo-trading.html" class="nav-logo">Lykeion Terminal</a>
+        <a href="demo-trading" class="nav-logo">Lykeion Terminal</a>
         <div class="nav-right">
             <button type="button" class="wallet-hud wallet-hud--trigger" id="wallet-hud-trigger" aria-expanded="false" aria-controls="positions-panel" title="Demo portfolio">
                 <span class="wh-bal" id="wh-bal">5.000 SOL</span>
@@ -1721,7 +1721,7 @@
             let MINT = '';
             try { MINT = decodeURIComponent(rawHash).trim(); } catch { MINT = rawHash.trim(); }
             if (!MINT) {
-                window.location.replace('demo-trading.html');
+                window.location.replace('demo-trading');
                 return;
             }
 
@@ -3920,7 +3920,7 @@
             });
             document.getElementById('terminal-back-btn')?.addEventListener('click', () => {
                 if (window.history.length > 1) window.history.back();
-                else window.location.href = 'demo-trading.html';
+                else window.location.href = 'demo-trading';
             });
 
             function renderPositionsList() {
@@ -3972,7 +3972,7 @@
                         }));
                     } catch {}
                 }
-                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(mint);
+                window.location.href = 'demo-trading-terminal?chartonly=1#' + encodeURIComponent(mint);
             });
 
             // hash change -> reload with new mint
@@ -4233,5 +4233,6 @@
             }, 1500);
         })();
     </script>
+    <script src="/scripts/vercel-analytics.js"></script>
 </body>
 </html>

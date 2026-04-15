@@ -26,7 +26,7 @@
   <nav class="navbar">
     <span class="nav-logo">Lykeion Assistant</span>
     <div style="display: flex; gap: 16px; align-items: center;">
-      <a href="dashboard.html"><img src="../assets/icons/icons8-x-50.png" alt="Close" class="x-icon" /></a>
+      <a href="dashboard"><img src="../assets/icons/icons8-x-50.png" alt="Close" class="x-icon" /></a>
     </div>
   </nav>
 
@@ -49,7 +49,7 @@
       <button id="send-btn" class="ai-send-btn">Send</button>
     </form>
   </div>
-  <a href="dashboard.html" class="floating-back-btn" title="Go back"><span>←</span></a>
+  <a href="dashboard" class="floating-back-btn" title="Go back"><span>←</span></a>
   <div class="cpotato-signature">© 2026 pinkpotato</div>
 
     <script src="../scripts/bootstrap-secrets.js"></script>
@@ -60,5 +60,6 @@
     <script src="../scripts/chat-ui.js"></script>
     <!-- Loads lykeion-ai.js after merging /api/lykeion-secrets (Vercel HELIUS_API_KEY) into LYKEION_SECRETS -->
     <script src="../scripts/bootstrap-secrets-remote.js"></script>
+    <script src="/scripts/vercel-analytics.js"></script>
 </body>
 </html>

@@ -644,7 +644,7 @@
         </div>
     </main>
 
-    <a href="dashboard.html" class="floating-back-btn" title="Go back">
+    <a href="dashboard" class="floating-back-btn" title="Go back">
         <span>←</span>
     </a>
 
@@ -1628,7 +1628,7 @@
                     const primary = pools.find((p) => /pumpswap/i.test(String(p?.market || ''))) || pools[0] || {};
                     const mc = Number(primary.marketCap?.usd || item.marketCap?.usd || 0) || 0;
                     const shortMint = mint ? `${mint.slice(0, 4)}…${mint.slice(-4)}` : '';
-                    const href = mint ? `demo-trading-terminal.html?chartonly=1#${encodeURIComponent(mint)}` : '#';
+                    const href = mint ? `demo-trading-terminal?chartonly=1#${encodeURIComponent(mint)}` : '#';
                     return `
                         <a class="search-result" href="${escapeHtml(href)}" data-mint="${escapeHtml(mint)}" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(name)}" data-image="${escapeHtml(image)}">
                             ${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.outerHTML='<span class=&quot;no-img&quot;></span>'" />` : '<span class="no-img"></span>'}
@@ -2398,7 +2398,7 @@
                     return;
                 }
                 try { sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify(snap)); } catch {}
-                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(snap.mint);
+                window.location.href = 'demo-trading-terminal?chartonly=1#' + encodeURIComponent(snap.mint);
             }
             newColumnList?.addEventListener('click', handleColumnClick);
             soonColumnList?.addEventListener('click', handleColumnClick);
@@ -2484,7 +2484,7 @@
                         }));
                     } catch {}
                 }
-                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(mint);
+                window.location.href = 'demo-trading-terminal?chartonly=1#' + encodeURIComponent(mint);
             });
 
             document.getElementById('wh-reset-btn')?.addEventListener('click', () => {
@@ -2502,5 +2502,6 @@
             renderWalletHud();
         })();
     </script>
+    <script src="/scripts/vercel-analytics.js"></script>
 </body>
 </html>

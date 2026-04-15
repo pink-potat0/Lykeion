@@ -69,7 +69,7 @@ document.getElementById('signinForm').addEventListener('submit', async (e) => {
     msgEl.textContent = 'Sign in successful!';
     msgEl.className = 'auth-message success';
     setTimeout(() => {
-      window.location.href = 'dashboard.html';
+      window.location.href = 'dashboard';
     }, 1000);
   } catch (error) {
     let errorMessage = 'Sign in failed. ';
@@ -136,7 +136,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
     msgEl.textContent = 'Account created! Redirecting...';
     msgEl.className = 'auth-message success';
     setTimeout(() => {
-      window.location.href = 'dashboard.html';
+      window.location.href = 'dashboard';
     }, 1000);
   } catch (error) {
     let errorMessage = 'Sign up failed. ';

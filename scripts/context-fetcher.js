@@ -1,4 +1,4 @@
-const COURSE_FILE_PATH = "lycuem-course.html";
+const COURSE_FILE_PATH = "/pages/lycuem-course";
 let courseTextCache = "";
 
 function needsFreshContext(query) {

@@ -24,7 +24,7 @@
   <div class="background-pattern"></div>
 
   <nav class="navbar">
-    <a href="dashboard.html"><img src="../assets/icons/icons8-x-50.png" alt="Close" class="x-icon" /></a>
+    <a href="dashboard"><img src="../assets/icons/icons8-x-50.png" alt="Close" class="x-icon" /></a>
     <span class="nav-logo">Lykeion</span>
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle sidebar">
       <span></span>
@@ -63,7 +63,7 @@
     <p>&copy; 2026 pinkpotato</p>
   </footer>
 
-  <a href="dashboard.html" class="floating-back-btn" title="Go back">
+  <a href="dashboard" class="floating-back-btn" title="Go back">
     <span>←</span>
   </a>
 
@@ -937,7 +937,7 @@
           // Load first lesson by default
           loadChapterContent('1');
         } else {
-          window.location.href = 'login.html';
+          window.location.href = 'login';
         }
       });
     }).catch(function (err) {
@@ -1012,5 +1012,6 @@
       }
     });
   </script>
+  <script src="/scripts/vercel-analytics.js"></script>
 </body>
 </html>

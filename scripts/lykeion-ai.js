@@ -1828,7 +1828,7 @@ async function requestOpenAIReply(messages) {
   if (!OPENAI_API_KEY) {
     throw new Error(
       "OpenAI is not configured. Start the app with the Node server (npm run dev), set OPENAI_API_KEY in .env, " +
-        "and open this page from the server URL (e.g. http://localhost:3000/pages/lykeion-ai.html). " +
+        "and open this page from the server URL (e.g. http://localhost:3000/pages/lykeion-ai). " +
         "Optional: set window.LYKEION_SECRETS.openai only for local browser-direct calls (not recommended for production)."
     );
   }
@@ -1967,7 +1967,7 @@ function initLykeionChatUi() {
     .then(function () {
       firebase.auth().onAuthStateChanged(async (user) => {
         if (!user) {
-          window.location.href = "login.html";
+          window.location.href = "login";
           return;
         }
         currentUserId = user.uid;
