@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Lykeion demo trading terminal.">
     <title>Lykeion - Demo Terminal</title>
     <link rel="icon" type="image/png" href="../assets/icons/favicon.png">
@@ -20,6 +20,7 @@
             font-display: block;
         }
         html, body { height: 100%; margin: 0; }
+        /* Terminal is full-bleed on small screens; style.css .page-demo-trading adds horizontal padding — overridden in mobile @media */
         body.page-demo-trading {
             display: flex !important;
             flex-direction: column !important;
@@ -50,16 +51,16 @@
         /* Floating back (replaces navbar “Back to board” on terminal) */
         .terminal-fab-back {
             position: fixed;
-            bottom: 32px;
-            right: 22px;
+            bottom: 30px;
+            right: 30px;
             z-index: 5000;
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.14);
             background: rgba(14,14,20,0.94);
             color: #e6e6ea;
-            font-size: 22px;
+            font-size: 20px;
             line-height: 1;
             cursor: pointer;
             box-shadow: 0 10px 28px rgba(0,0,0,0.45);
@@ -357,7 +358,8 @@
             display: none;
         }
         .term-chart-wrap--tv .chart-ohlc-legend,
-        .term-chart-wrap--tv .chart-float-toasts {
+        .term-chart-wrap--tv .chart-float-toasts,
+        .term-chart-wrap--tv .chart-float-pops {
             display: none !important;
         }
         .term-chart-wrap--tv #term-chart {
@@ -375,6 +377,9 @@
         }
         .term-chart-wrap--gt .chart-ohlc-legend {
             display: none !important;
+        }
+        .term-chart-wrap--gt .chart-float-pops {
+            z-index: 60;
         }
         .term-chart-wrap--gt .chart-float-toasts {
             z-index: 50;
@@ -405,27 +410,63 @@
             border: 0;
             background: #0d1117;
         }
-        @media (max-width: 900px) {
+        /* Desktop: show full GeckoTerminal UI including toolbar */
+        @media (min-width: 1001px) {
             .term-chart-wrap--gt .gt-embed-iframe {
-                left: -4%;
-                top: -20%;
-                width: 108%;
-                height: 200%;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
             }
         }
-        .chart-float-toasts {
+        /* Transient buy/sell lines — centered, narrow, over chart */
+        .chart-float-pops {
             position: absolute;
-            top: 10px;
-            right: 56px;
-            left: auto;
-            z-index: 30;
+            inset: 0;
+            z-index: 45;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 48px 12px 0;
             gap: 6px;
             pointer-events: none;
-            max-width: min(280px, calc(100% - 20px));
+            box-sizing: border-box;
+        }
+        .chart-float-pops .chart-float-toast.is-buy-pop,
+        .chart-float-pops .chart-float-toast.is-sell-pop,
+        .chart-float-pops .chart-float-toast.is-err-pop {
+            max-width: 200px;
+            width: 100%;
+            text-align: center;
+            margin: 0;
+        }
+        .chart-float-pops .cfe-pop-msg {
+            font-size: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+        }
+        /* Persistent entry | exit — single bar, bottom center */
+        .chart-float-toasts {
+            position: absolute;
+            left: 50%;
+            right: auto;
+            top: auto;
+            bottom: 8px;
+            transform: translateX(-50%);
+            z-index: 35;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            pointer-events: none;
+            width: min(360px, calc(100% - 20px));
+            max-width: min(360px, calc(100% - 20px));
         }
         .chart-float-toast {
+            /* Must not capture taps — parent pointer-events:none does not apply to children by default */
+            pointer-events: none;
             font-size: 11px;
             font-variant-numeric: tabular-nums;
             padding: 6px 10px;
@@ -444,6 +485,40 @@
             opacity: 0.65;
             margin-bottom: 2px;
         }
+        .chart-float-toast.is-entry-exit {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 10px;
+            padding: 8px 10px;
+            border-color: rgba(255, 255, 255, 0.14);
+            background: rgba(12, 14, 20, 0.94);
+        }
+        .chart-float-toast.is-entry-exit .cfe-side {
+            min-width: 0;
+            font-size: 10px;
+            line-height: 1.35;
+        }
+        .chart-float-toast.is-entry-exit .cfe-entry {
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding-right: 8px;
+        }
+        .chart-float-toast.is-entry-exit .cfe-exit {
+            padding-left: 2px;
+        }
+        .chart-float-toast.is-entry-exit .cfe-side strong {
+            margin-bottom: 3px;
+        }
+        .chart-float-toast.is-entry-exit .cfe-side .cfe-detail {
+            opacity: 0.88;
+            font-variant-numeric: tabular-nums;
+            word-break: break-word;
+        }
+        .chart-float-toast.is-entry-exit .cfe-entry strong {
+            color: rgba(134, 239, 172, 0.95);
+        }
+        .chart-float-toast.is-entry-exit .cfe-exit strong {
+            color: rgba(252, 165, 165, 0.95);
+        }
         .chart-float-toast.is-entry { border-color: rgba(38,166,154,0.45); }
         .chart-float-toast.is-exit { border-color: rgba(239,83,80,0.45); }
         .chart-float-toast.is-buy-pop {
@@ -458,9 +533,15 @@
             color: #fca5a5;
             animation: toastPop 280ms ease-out;
         }
+        .chart-float-toast.is-err-pop {
+            border-color: rgba(248,113,113,0.55);
+            background: rgba(60, 20, 24, 0.92);
+            color: #fecaca;
+            animation: toastPop 280ms ease-out;
+        }
         @keyframes toastPop {
-            0% { transform: translateX(8px) scale(0.96); opacity: 0; }
-            100% { transform: translateX(0) scale(1); opacity: 1; }
+            0% { transform: translateY(-6px) scale(0.96); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
         }
 
         .pnl-card-modal {
@@ -791,8 +872,9 @@
         .portfolio-modal-dialog {
             position: relative;
             z-index: 1;
-            width: min(960px, calc(100vw - 48px));
-            max-width: 96vw;
+            /* Use % (layout viewport) instead of 100vw to avoid horizontal scrollbar + overflow on mobile */
+            width: min(960px, calc(100% - 48px));
+            max-width: 100%;
             min-height: min(520px, 70vh);
             max-height: min(92vh, 920px);
             background: rgba(14,14,20,0.98);
@@ -1043,7 +1125,36 @@
 
         /* ===== Mobile (Chart | Trades tabs, edge-to-edge stack) ===== */
         @media (max-width: 1000px) {
-            body.page-demo-trading { height: auto; min-height: 100vh; }
+            /*
+             * Mobile: full width + safe-area; vertical scroll when content is taller than the viewport.
+             * (No max-height on body — avoids clipping toasts, trade block, or chart chrome.)
+             */
+            html {
+                height: 100%;
+                min-height: 100dvh;
+                display: flex;
+                flex-direction: column;
+                overflow-x: hidden;
+                width: 100%;
+                max-width: 100%;
+            }
+            /* Override style.css .page-demo-trading { overflow: hidden; padding: 0 10px } — full width + safe-area; no horizontal overflow from 100vw children */
+            body.page-demo-trading {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                min-height: 100dvh;
+                overflow-x: hidden !important;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-x: none;
+                overscroll-behavior-y: contain;
+                width: 100%;
+                max-width: 100%;
+                padding-left: max(0px, env(safe-area-inset-left, 0px)) !important;
+                padding-right: max(0px, env(safe-area-inset-right, 0px)) !important;
+                padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+            }
             /*
              * Centered title: three-column grid. Base .nav-spacer used width:0 — without resetting it here,
              * only logo + nav-right participated and the logo sat in the wide left column (off-center).
@@ -1081,31 +1192,52 @@
                 width: 20px;
                 height: 20px;
             }
+            /*
+             * Full terminal: trade presets are full-width near the bottom; a low fixed FAB
+             * sat on the right column and covered the 1 SOL (etc.) buttons. Float the FAB higher
+             * so it clears the trade card; chart-only embed keeps the corner FAB.
+             */
             body.page-demo-trading .terminal-fab-back {
-                bottom: max(46px, calc(30px + env(safe-area-inset-bottom, 0px)));
-                right: max(16px, env(safe-area-inset-right, 0px));
+                bottom: max(42px, calc(24px + env(safe-area-inset-bottom, 0px)));
+                right: max(20px, env(safe-area-inset-right, 0px));
             }
             .term-main {
+                flex: 1 1 auto;
                 display: flex;
                 flex-direction: column;
                 grid-template-columns: unset;
-                overflow: visible;
-                /* Room for fixed navbar at top and fixed .terminal-fab-back at bottom */
-                padding: 70px 0 max(88px, calc(72px + env(safe-area-inset-bottom, 0px)));
-                gap: 0;
                 min-height: 0;
+                overflow-x: hidden;
+                overflow-y: visible;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+                /* Fixed navbar + safe area; enough bottom pad so trade presets clear the back FAB */
+                padding-top: max(72px, env(safe-area-inset-top, 0px));
+                padding-bottom: max(80px, calc(68px + env(safe-area-inset-bottom, 0px)));
+                padding-left: env(safe-area-inset-left, 0px);
+                padding-right: env(safe-area-inset-right, 0px);
+                gap: 0;
+            }
+            /* Chart-only embed: no ticker/tabs — room for floating back */
+            body.page-demo-trading.term-chart-only .term-main {
+                overflow: visible;
+                padding-top: max(48px, env(safe-area-inset-top, 0px));
+                padding-bottom: max(24px, calc(12px + env(safe-area-inset-bottom, 0px)));
             }
             .ticker-strip {
                 flex-wrap: nowrap;
                 align-items: center;
-                gap: 6px 10px;
-                padding: 9px 10px;
+                gap: 4px 8px;
+                padding: 6px 8px;
                 border-radius: 0;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.07);
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
                 background: #08080c;
+                flex: 0 0 auto;
             }
             .ticker-strip::-webkit-scrollbar { display: none; height: 0; }
             .ticker-strip .t-icon { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 8px; }
@@ -1127,11 +1259,11 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
-            .ticker-strip { position: relative; padding-top: 30px; }
+            .ticker-strip { position: relative; padding-top: 24px; }
             .ticker-strip .t-copy-ca {
                 position: absolute;
-                top: 6px;
-                right: 10px;
+                top: 4px;
+                right: 8px;
                 margin: 0;
                 padding: 3px 7px;
                 font-size: 10px;
@@ -1143,7 +1275,7 @@
                 flex-wrap: nowrap;
                 gap: 6px 10px;
                 flex: 1 1 auto;
-                min-width: min-content;
+                min-width: 0;
             }
             .ticker-stats .stat {
                 min-width: 0;
@@ -1184,17 +1316,18 @@
                 padding: 0;
                 background: #08080c;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                flex: 0 0 auto;
             }
             .mobile-term-tab {
                 flex: 1;
                 margin: 0;
-                padding: 11px 12px;
+                padding: 8px 10px;
                 border: 0;
                 border-bottom: 2px solid transparent;
                 background: transparent;
                 color: rgba(230, 230, 234, 0.45);
                 font: inherit;
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 700;
                 cursor: pointer;
                 transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
@@ -1211,28 +1344,48 @@
                 order: 3;
                 flex-direction: column;
                 align-items: stretch;
-                min-height: 260px;
+                /* Grow into spare viewport height so the chart fills instead of leaving a dead band above the footer */
+                flex: 1 1 auto;
                 margin: 0;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+                overflow: hidden;
+                min-height: clamp(220px, 32vh, 520px);
             }
             .term-chart-row .term-chart-wrap {
-                min-height: 260px;
-                flex: 1;
+                flex: 1 1 auto;
+                min-height: 0;
                 min-width: 0;
                 border-radius: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            .term-chart-wrap--gt .term-chart-inner {
+                flex: 1 1 auto;
+                min-height: clamp(220px, 38vh, 480px);
+                overflow: hidden;
+            }
+            .term-chart-inner > #term-chart {
+                flex: 1 1 auto;
+                min-height: 0;
             }
             .term-chart-wrap--gt #term-chart.term-chart--gt {
                 border-radius: 0 !important;
-                min-height: 260px;
+                min-height: clamp(220px, 38vh, 480px);
+                flex: 1 1 auto;
+                touch-action: auto;
             }
             .term-chart-wrap--tv .term-chart-inner {
                 min-height: 260px;
             }
             #term-tx-card {
                 order: 3;
-                flex: 0 0 auto;
+                flex: 1 1 auto;
+                min-height: 0;
                 display: none !important;
                 flex-direction: column;
-                min-height: min(52vh, 420px);
                 max-height: min(58vh, 520px);
                 overflow: hidden;
                 transition: none;
@@ -1250,25 +1403,28 @@
             }
             body.mobile-term-view-trades #term-tx-card {
                 display: flex !important;
+                min-height: min(48vh, 380px);
             }
             body.mobile-term-view-trades .term-chart-row {
                 display: none !important;
             }
             #term-position {
                 order: 4;
-                margin-top: 8px;
+                flex: 0 0 auto;
+                margin-top: 4px;
                 border-radius: 0;
                 border-left: 0;
                 border-right: 0;
-                padding: 8px 12px 6px !important;
+                padding: 6px 10px 4px !important;
             }
             #term-trade-card {
                 order: 5;
+                flex: 0 0 auto;
                 margin-top: 0;
                 border-radius: 0;
                 border-left: 0;
                 border-right: 0;
-                padding: 6px 12px 10px !important;
+                padding: 4px 10px 8px !important;
             }
             #term-trade-card > h4 {
                 margin: 0 0 6px;
@@ -1286,11 +1442,11 @@
                 display: flex !important;
                 width: 100%;
                 box-sizing: border-box;
-                margin-top: 10px;
-                padding: 11px 14px;
-                font-size: 13px;
+                margin-top: 6px;
+                padding: 8px 12px;
+                font-size: 12px;
                 font-weight: 700;
-                border-radius: 10px;
+                border-radius: 8px;
                 justify-content: center;
                 align-items: center;
                 -webkit-tap-highlight-color: transparent;
@@ -1303,8 +1459,11 @@
             .mobile-quick-trade {
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
-                margin-bottom: 4px;
+                gap: 6px;
+                margin-bottom: 2px;
+                min-width: 0;
+                max-width: 100%;
+                box-sizing: border-box;
             }
             .mqt-mode-toggle {
                 display: flex;
@@ -1317,7 +1476,7 @@
             .mqt-mode {
                 flex: 1;
                 margin: 0;
-                padding: 10px 8px;
+                padding: 8px 6px;
                 border: 0;
                 border-radius: 8px;
                 background: transparent;
@@ -1343,6 +1502,8 @@
                 display: grid;
                 grid-template-columns: repeat(5, minmax(0, 1fr));
                 gap: 6px;
+                min-width: 0;
+                width: 100%;
             }
             /* [hidden] must win over display:grid — otherwise both buy/sell rows show */
             .mqt-row[hidden] {
@@ -1350,8 +1511,8 @@
             }
             .mqt-chip {
                 margin: 0;
-                padding: 10px 4px;
-                border-radius: 10px;
+                padding: 8px 2px;
+                border-radius: 8px;
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 background: rgba(255, 255, 255, 0.04);
                 color: #e8e8ed;
@@ -1415,10 +1576,51 @@
                 justify-content: center;
                 padding: 8px 12px;
             }
+            .portfolio-modal-root:not([hidden]) {
+                padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+                box-sizing: border-box;
+            }
             .portfolio-modal-dialog {
-                width: calc(100vw - 28px);
+                width: 100% !important;
+                max-width: min(960px, 100%) !important;
                 min-height: 0;
-                max-height: 92vh;
+                max-height: min(92vh, 920px);
+                box-sizing: border-box;
+            }
+
+            /* Same overlay behavior as desktop: pops centered, entry|exit bar bottom-center */
+            .term-chart-inner .chart-float-pops {
+                padding-top: 40px;
+            }
+            .term-chart-inner .chart-float-pops .chart-float-toast.is-buy-pop,
+            .term-chart-inner .chart-float-pops .chart-float-toast.is-sell-pop,
+            .term-chart-inner .chart-float-pops .chart-float-toast.is-err-pop {
+                max-width: min(200px, 88vw);
+            }
+            .term-chart-inner .chart-float-toasts {
+                bottom: max(6px, env(safe-area-inset-bottom, 0px));
+                width: min(340px, calc(100% - 16px));
+                max-width: min(340px, calc(100% - 16px));
+            }
+            .term-chart-wrap--gt .gt-embed-crop {
+                touch-action: auto;
+                pointer-events: auto;
+            }
+            /*
+             * GeckoTerminal embed=1 strips most controls. Scale the iframe down so the
+             * full embed UI fits in a smaller viewport. 113.64% × scale(0.88) ≈ 100% visual.
+             * Touch coordinates align because the browser maps through the CSS transform.
+             */
+            .term-chart-wrap--gt .gt-embed-iframe {
+                left: 0 !important;
+                top: 0 !important;
+                width: 113.64% !important;
+                height: 113.64% !important;
+                touch-action: auto;
+                pointer-events: auto;
+                -webkit-transform: translateZ(0) scale(0.88);
+                transform: translateZ(0) scale(0.88);
+                transform-origin: top left;
             }
         }
     </style>
@@ -1429,7 +1631,7 @@
 
     <nav class="navbar">
         <div class="nav-spacer" aria-hidden="true"></div>
-        <a href="demo-trading" class="nav-logo">Lykeion Terminal</a>
+        <a href="demo-trading.html" class="nav-logo">Lykeion Terminal</a>
         <div class="nav-right">
             <button type="button" class="wallet-hud wallet-hud--trigger" id="wallet-hud-trigger" aria-expanded="false" aria-controls="positions-panel" title="Demo portfolio">
                 <span class="wh-bal" id="wh-bal">5.000 SOL</span>
@@ -1535,6 +1737,7 @@
                 <div class="term-chart-inner">
                     <div id="term-chart" role="img" aria-label="Price chart"></div>
                     <div class="chart-ohlc-legend" id="chart-ohlc-legend" hidden></div>
+                    <div class="chart-float-pops" id="chart-float-pops" aria-live="polite"></div>
                     <div class="chart-float-toasts" id="chart-float-toasts" aria-live="polite"></div>
                 </div>
             </div>
@@ -1721,7 +1924,7 @@
             let MINT = '';
             try { MINT = decodeURIComponent(rawHash).trim(); } catch { MINT = rawHash.trim(); }
             if (!MINT) {
-                window.location.replace('demo-trading');
+                window.location.replace('demo-trading.html');
                 return;
             }
 
@@ -1976,6 +2179,7 @@
             const toggleBtns = document.querySelectorAll('.trade-toggle button');
             const whBalEl = document.getElementById('wh-bal');
             const chartEl = document.getElementById('term-chart');
+            const chartFloatPopsEl = document.getElementById('chart-float-pops');
             const chartFloatToastsEl = document.getElementById('chart-float-toasts');
             const toastStack = document.getElementById('toast-stack');
 
@@ -2491,8 +2695,22 @@
                 });
             }
 
+            /** GeckoTerminal embed ?interval= matches CHART_INTERVALS labels (e.g. 5s, 1m, 15m). */
+            function geckoIntervalParamFromSec(sec) {
+                const n = Number(sec);
+                const hit = CHART_INTERVALS.find((x) => x.sec === n);
+                return hit ? hit.label : '15m';
+            }
+
+            function currentGeckoChartEmbedTarget() {
+                const pool = String(token?.geckoPoolAddr || '').trim();
+                if (pool) return { addr: pool, isPool: true };
+                return { addr: MINT, isPool: false };
+            }
+
             /** GeckoTerminal chart-only embed — chart pane, no txn/swap table, no pair info header. */
             function geckoTerminalEmbedUrl(mintOrPool, isPool) {
+                const interval = geckoIntervalParamFromSec(chartBucketSec);
                 const q = new URLSearchParams({
                     embed: '1',
                     theme: 'dark',
@@ -2500,7 +2718,7 @@
                     trades: '0',
                     swaps: '0',
                     chart: '1',
-                    interval: '15s',
+                    interval,
                 });
                 const base = isPool
                     ? 'https://www.geckoterminal.com/solana/pools/'
@@ -2521,10 +2739,11 @@
                 fr.id = 'geckoterminal-chart-frame';
                 fr.className = 'gt-embed-iframe';
                 fr.title = 'GeckoTerminal chart';
-                fr.setAttribute('loading', 'lazy');
+                fr.setAttribute('loading', 'eager');
                 fr.referrerPolicy = 'no-referrer-when-downgrade';
-                fr.allow = 'clipboard-write';
-                fr.src = geckoTerminalEmbedUrl(MINT);
+                fr.setAttribute('allow', 'fullscreen; clipboard-write');
+                const { addr, isPool } = currentGeckoChartEmbedTarget();
+                fr.src = geckoTerminalEmbedUrl(addr, isPool);
                 crop.appendChild(fr);
                 chartEl.appendChild(crop);
             }
@@ -3254,6 +3473,29 @@
                 }, 2800);
             }
 
+            /** Trade validation errors: same centered strip as bought/sold pops (not #toast-stack). Falls back to toast when TV chart hides pops. */
+            function chartTradeOverlayActive() {
+                const wrap = document.querySelector('.term-chart-wrap');
+                return !!(chartFloatPopsEl && wrap && !wrap.classList.contains('term-chart-wrap--tv'));
+            }
+            function pushChartTradeHintToast(message, playDenySound) {
+                if (playDenySound) playTradeDenySound();
+                if (chartTradeOverlayActive()) {
+                    chartFloatPopsEl.querySelectorAll('.is-err-pop').forEach((n) => n.remove());
+                    const el = document.createElement('div');
+                    el.className = 'chart-float-toast is-err-pop';
+                    const span = document.createElement('span');
+                    span.className = 'cfe-pop-msg';
+                    span.textContent = message;
+                    el.appendChild(span);
+                    chartFloatPopsEl.prepend(el);
+                    setTimeout(() => { el.style.transition = 'opacity 400ms'; el.style.opacity = '0'; }, 5600);
+                    setTimeout(() => { el.remove(); }, 6200);
+                } else {
+                    toast(message, 'is-err');
+                }
+            }
+
             // ---- trading ----
             function playKachingTradeSound() {
                 try {
@@ -3268,14 +3510,50 @@
                 } catch (_) {}
             }
 
+            /** Soft double-tap "bonk" for insufficient SOL / no position — Web Audio (no extra asset). */
+            function playTradeDenySound() {
+                try {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!AC) return;
+                    const ctx = playTradeDenySound._ctx || (playTradeDenySound._ctx = new AC());
+                    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                    const t0 = ctx.currentTime;
+                    /* First tap */
+                    const o1 = ctx.createOscillator();
+                    const g1 = ctx.createGain();
+                    o1.type = 'triangle';
+                    o1.frequency.setValueAtTime(420, t0);
+                    o1.frequency.exponentialRampToValueAtTime(200, t0 + 0.12);
+                    g1.gain.setValueAtTime(0.6, t0);
+                    g1.gain.exponentialRampToValueAtTime(0.001, t0 + 0.15);
+                    o1.connect(g1);
+                    g1.connect(ctx.destination);
+                    o1.start(t0);
+                    o1.stop(t0 + 0.16);
+                    /* Second tap — lower */
+                    const o2 = ctx.createOscillator();
+                    const g2 = ctx.createGain();
+                    o2.type = 'triangle';
+                    o2.frequency.setValueAtTime(300, t0 + 0.14);
+                    o2.frequency.exponentialRampToValueAtTime(140, t0 + 0.28);
+                    g2.gain.setValueAtTime(0, t0);
+                    g2.gain.setValueAtTime(0.5, t0 + 0.14);
+                    g2.gain.exponentialRampToValueAtTime(0.001, t0 + 0.30);
+                    o2.connect(g2);
+                    g2.connect(ctx.destination);
+                    o2.start(t0 + 0.14);
+                    o2.stop(t0 + 0.32);
+                } catch (_) {}
+            }
+
             function executeBuy(amountSol, mcUsdAtClick) {
                 if (!(amountSol > 0)) return false;
                 if (amountSol > wallet.balanceSol + 1e-9) {
-                    toast('Insufficient balance (' + fmtSolPlain(wallet.balanceSol) + ')', 'is-err');
+                    pushChartTradeHintToast('Insufficient balance (' + fmtSolPlain(wallet.balanceSol) + ')', true);
                     return false;
                 }
                 if (!(mcUsdAtClick > 0)) {
-                    toast('No market cap available — can\'t price entry', 'is-err');
+                    pushChartTradeHintToast('No market cap available — can\'t price entry');
                     return false;
                 }
                 playKachingTradeSound();
@@ -3308,10 +3586,6 @@
                 renderWalletHud();
                 renderPosition();
                 pushMyTrade('buy', amountSol, mcUsdAtClick);
-                toast(
-                    'Entry · Avg fill MC $' + formatCompactNumber(mcUsdAtClick) + ' · ' + amountSol.toFixed(3) + ' SOL',
-                    'is-pos'
-                );
                 pushChartTradeToast('buy', amountSol, mcUsdAtClick, null);
                 updateChartFloatToasts();
                 return true;
@@ -3319,8 +3593,8 @@
 
             function executeSell(fractionOfPosition, currentMcUsd) {
                 const pos = wallet.positions[MINT];
-                if (!pos) { toast('No position to sell', 'is-err'); return false; }
-                if (!(currentMcUsd > 0)) { toast('No live MC — can\'t close', 'is-err'); return false; }
+                if (!pos) { pushChartTradeHintToast('No position to sell', true); return false; }
+                if (!(currentMcUsd > 0)) { pushChartTradeHintToast('No live MC — can\'t close'); return false; }
                 const f = Math.max(0, Math.min(1, Number(fractionOfPosition) || 0));
                 if (f <= 0) return false;
                 const sellInvested = pos.investedSol * f;
@@ -3338,10 +3612,6 @@
                 renderWalletHud();
                 renderPosition();
                 pushMyTrade('sell', proceedsSol, currentMcUsd, realized);
-                toast(
-                    'Exit · MC $' + formatCompactNumber(currentMcUsd) + ' · proceeds ' + proceedsSol.toFixed(3) + ' SOL · PnL ' + fmtSol(realized),
-                    realized >= 0 ? 'is-pos' : 'is-neg'
-                );
                 pushChartTradeToast('sell', proceedsSol, currentMcUsd, realized);
                 playKachingTradeSound();
                 updateChartFloatToasts();
@@ -3395,12 +3665,12 @@
             termSubmitEl?.addEventListener('click', () => {
                 const mc = computeUsdMc() || (wallet.positions[MINT]?.lastMcUsd || 0);
                 const amount = Number(termAmountEl?.value);
-                if (!(amount > 0)) { toast('Enter an amount', 'is-err'); return; }
+                if (!(amount > 0)) { pushChartTradeHintToast('Enter an amount'); return; }
                 if (tradeSide === 'buy') {
                     executeBuy(amount, mc);
                 } else {
                     const pos = wallet.positions[MINT];
-                    if (!pos) { toast('No position to sell', 'is-err'); return; }
+                    if (!pos) { pushChartTradeHintToast('No position to sell', true); return; }
                     const ratio = mc / pos.entryMcUsd;
                     const currentValue = pos.investedSol * ratio;
                     const fraction = Math.min(1, amount / currentValue);
@@ -3455,7 +3725,7 @@
                 if (sellBtn) {
                     const frac = Number(sellBtn.getAttribute('data-mqt-sell'));
                     if (!wallet.positions[MINT]) {
-                        toast('No position to sell', 'is-err');
+                        pushChartTradeHintToast('No position to sell', true);
                         return;
                     }
                     if (Number.isFinite(frac) && frac > 0) executeSell(Math.min(1, frac), mc);
@@ -3625,20 +3895,16 @@
                 renderChartAnnotations();
             }
             function pushChartTradeToast(side, sol, mcUsd, pnlSol) {
-                if (!chartFloatToastsEl) return;
+                if (!chartFloatPopsEl) return;
                 const cls = side === 'buy' ? 'is-buy-pop' : 'is-sell-pop';
-                const label = side === 'buy' ? 'B' : 'S';
-                const pnlHtml = side === 'sell' && Number.isFinite(pnlSol)
-                    ? ' · PnL ' + (pnlSol >= 0 ? '+' : '') + pnlSol.toFixed(3) + ' SOL'
-                    : '';
+                const verb = side === 'buy' ? 'bought' : 'sold';
+                const amt = (Number(sol) || 0).toFixed(3);
                 const el = document.createElement('div');
                 el.className = 'chart-float-toast ' + cls;
-                el.innerHTML = '<strong>' + label + ' · ' + (side === 'buy' ? 'Bought' : 'Sold') + '</strong>'
-                    + (Number(sol) || 0).toFixed(3) + ' SOL · MC $' + formatCompactNumber(Number(mcUsd) || 0) + pnlHtml;
-                chartFloatToastsEl.prepend(el);
-                // cap to 4 live coasters, auto-expire after 6s
-                while (chartFloatToastsEl.querySelectorAll('.is-buy-pop,.is-sell-pop').length > 4) {
-                    const n = chartFloatToastsEl.querySelector('.is-buy-pop,.is-sell-pop:last-child');
+                el.innerHTML = '<span class="cfe-pop-msg">' + verb + ' ' + amt + ' sol</span>';
+                chartFloatPopsEl.prepend(el);
+                while (chartFloatPopsEl.querySelectorAll('.is-buy-pop,.is-sell-pop').length > 4) {
+                    const n = chartFloatPopsEl.querySelector('.is-buy-pop,.is-sell-pop:last-child');
                     if (!n) break;
                     n.remove();
                 }
@@ -3646,20 +3912,36 @@
                 setTimeout(() => { el.remove(); }, 6200);
             }
 
+            /** Entry line for chart card: open position, else weighted avg from buy history (keeps entry after full sell). */
+            function getEntryDisplayForMint() {
+                const pos = wallet.positions[MINT];
+                if (pos && pos.entryMcUsd > 0) {
+                    return { entryMcUsd: pos.entryMcUsd, investedSol: pos.investedSol };
+                }
+                const hist = (wallet.history || []).filter((h) => h.mint === MINT);
+                const buys = hist.filter((h) => h.kind === 'buy' && Number(h.mcUsd) > 0);
+                if (!buys.length) return null;
+                let sumMcSol = 0;
+                let sumSol = 0;
+                buys.forEach((h) => {
+                    const sol = Number(h.sol) || 0;
+                    const mc = Number(h.mcUsd) || 0;
+                    if (sol > 0 && mc > 0) {
+                        sumMcSol += mc * sol;
+                        sumSol += sol;
+                    }
+                });
+                if (sumSol <= 0) return null;
+                return { entryMcUsd: sumMcSol / sumSol, investedSol: sumSol };
+            }
+
             function updateChartFloatToasts() {
                 if (!chartFloatToastsEl) return;
-                const pos = wallet.positions[MINT];
                 const hist = (wallet.history || []).filter((h) => h.mint === MINT);
                 const sells = hist.filter((h) => h.kind === 'sell' && Number(h.mcUsd) > 0);
-                const parts = [];
-                if (pos && pos.entryMcUsd > 0) {
-                    parts.push(
-                        '<div class="chart-float-toast is-entry"><strong>Entry</strong>'
-                        + 'Avg fill MC $' + formatCompactNumber(pos.entryMcUsd)
-                        + (pos.investedSol > 0 ? ' · ' + pos.investedSol.toFixed(3) + ' SOL in' : '')
-                        + '</div>'
-                    );
-                }
+                chartFloatToastsEl.querySelectorAll('.is-entry-exit').forEach((n) => n.remove());
+                const entryDisp = getEntryDisplayForMint();
+                let exitHtml = '';
                 if (sells.length) {
                     let sumMcSol = 0;
                     let wsum = 0;
@@ -3674,21 +3956,23 @@
                     const avgExitMc = wsum > 0 ? sumMcSol / wsum : Number(sells[sells.length - 1].mcUsd) || 0;
                     const lastPnl = Number(sells[0].pnlSol);
                     const pnlStr = Number.isFinite(lastPnl) ? (lastPnl >= 0 ? '+' : '') + lastPnl.toFixed(3) + ' SOL' : '—';
-                    parts.push(
-                        '<div class="chart-float-toast is-exit"><strong>Exit (avg)</strong>'
-                        + 'MC $' + formatCompactNumber(avgExitMc)
-                        + ' · last PnL ' + pnlStr
+                    exitHtml = '<div class="cfe-detail">MC $' + formatCompactNumber(avgExitMc) + ' · PnL ' + pnlStr + '</div>';
+                } else {
+                    exitHtml = '<div class="cfe-detail">—</div>';
+                }
+                const entryHtml = entryDisp
+                    ? '<div class="cfe-detail">MC $' + formatCompactNumber(entryDisp.entryMcUsd)
+                        + (entryDisp.investedSol > 0 ? ' · ' + entryDisp.investedSol.toFixed(3) + ' SOL' : '')
                         + '</div>'
-                    );
-                }
-                // Keep transient B/S pop toasts; only replace the persistent entry/exit pills.
-                chartFloatToastsEl.querySelectorAll('.is-entry, .is-exit').forEach((n) => n.remove());
-                if (parts.length) {
-                    const wrap = document.createElement('div');
-                    wrap.innerHTML = parts.join('');
-                    // append persistent pills at the bottom so new pop toasts stay on top
-                    chartFloatToastsEl.append(...wrap.children);
-                }
+                    : '<div class="cfe-detail">—</div>';
+                if (!entryDisp && !sells.length) return;
+                const wrap = document.createElement('div');
+                wrap.innerHTML = ''
+                    + '<div class="chart-float-toast is-entry-exit" role="status">'
+                    + '<div class="cfe-side cfe-entry"><strong>Entry</strong>' + entryHtml + '</div>'
+                    + '<div class="cfe-side cfe-exit"><strong>Exit</strong>' + exitHtml + '</div>'
+                    + '</div>';
+                chartFloatToastsEl.append(...wrap.children);
             }
 
             function renderChartAnnotations() {
@@ -3920,7 +4204,7 @@
             });
             document.getElementById('terminal-back-btn')?.addEventListener('click', () => {
                 if (window.history.length > 1) window.history.back();
-                else window.location.href = 'demo-trading';
+                else window.location.href = 'demo-trading.html';
             });
 
             function renderPositionsList() {
@@ -3972,7 +4256,7 @@
                         }));
                     } catch {}
                 }
-                window.location.href = 'demo-trading-terminal?chartonly=1#' + encodeURIComponent(mint);
+                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(mint);
             });
 
             // hash change -> reload with new mint
@@ -3998,7 +4282,98 @@
                 pushTx._buf.sort((a, b) => b.at - a.at);
             })();
 
-            // Historical trades: Solana Tracker GET /trades/{token} (see OpenAPI — use sortDirection, not sortBy/limit)
+            /**
+             * Solana Tracker returns one page per request; use nextCursor to load history (default page is tiny).
+             */
+            async function fetchTradesPaginated(tokenMint) {
+                const maxPages = 30;
+                const maxTrades = 500;
+                const all = [];
+                let cursor = null;
+                for (let page = 0; page < maxPages && all.length < maxTrades; page++) {
+                    const u = new URL('https://data.solanatracker.io/trades/' + encodeURIComponent(tokenMint));
+                    u.searchParams.set('sortDirection', 'DESC');
+                    if (cursor != null && cursor !== '') u.searchParams.set('cursor', String(cursor));
+                    const res = await fetch(u.toString(), {
+                        cache: 'no-store',
+                        headers: { 'x-api-key': getSolanaTrackerKey() },
+                    });
+                    if (!res.ok) {
+                        if (page === 0) throw new Error('trades HTTP ' + res.status);
+                        break;
+                    }
+                    const json = await res.json();
+                    const batch = Array.isArray(json?.trades)
+                        ? json.trades
+                        : Array.isArray(json)
+                            ? json
+                            : [];
+                    if (!batch.length) break;
+                    all.push(...batch);
+                    const hasNext = json.hasNextPage === true;
+                    const nextC = json.nextCursor;
+                    if (!hasNext && (nextC == null || nextC === '')) break;
+                    if (nextC == null || nextC === '') break;
+                    cursor = nextC;
+                }
+                return all;
+            }
+
+            function ingestTradesIntoTxBuffer(trades) {
+                const fbMc = computeUsdMc();
+                const refPx = Number(token.lastPriceUsd) || 0;
+                trades.forEach((t) => {
+                    const side = String(t.type || t.txType || '').toLowerCase();
+                    if (side !== 'buy' && side !== 'sell') return;
+                    const fullTrader = String(t.wallet || t.trader || t.traderPublicKey || '');
+                    const trader = fullTrader.slice(0, 4);
+                    const sol = Number(t.volumeSol ?? t.solAmount ?? t.amountSol ?? 0);
+                    const tsRaw = Number(t.time ?? t.timestamp ?? 0);
+                    const at = tsRaw > 1e12 ? tsRaw : (tsRaw > 0 ? tsRaw * 1000 : Date.now());
+                    let mcUsd = mcUsdFromTradePayload(t, 0);
+                    if (!(mcUsd > 0)) {
+                        const px = chartPriceUsdFromSolanaTrade(t);
+                        if (px > 0 && refPx > 0 && fbMc > 0) mcUsd = (px / refPx) * fbMc;
+                    }
+                    if (!(mcUsd > 0)) mcUsd = fbMc;
+                    const txSig = String(t.tx || t.signature || '').trim();
+                    pushTx(side, sol, trader, false, {
+                        fullTrader,
+                        at,
+                        mcUsd,
+                        tx: txSig,
+                    });
+                });
+                (pushTx._buf || []).forEach((r) => {
+                    if (!r.isMine && devWallet && r.fullTrader === devWallet) r.isDev = true;
+                });
+            }
+
+            /** One page only — for periodic refresh (new trades) without re-paginating full history. */
+            async function pollRecentTradesPage() {
+                if (!getSolanaTrackerKey()) return;
+                try {
+                    const url = 'https://data.solanatracker.io/trades/' + encodeURIComponent(MINT) + '?sortDirection=DESC';
+                    const res = await fetch(url, {
+                        cache: 'no-store',
+                        headers: { 'x-api-key': getSolanaTrackerKey() },
+                    });
+                    if (!res.ok) return;
+                    const json = await res.json();
+                    const trades = Array.isArray(json?.trades)
+                        ? json.trades
+                        : Array.isArray(json)
+                            ? json
+                            : [];
+                    if (!trades.length) return;
+                    ingestTradesIntoTxBuffer(trades);
+                    renderTxs();
+                } catch {
+                    /* ignore poll errors */
+                }
+            }
+
+            // Historical trades: Solana Tracker GET /trades/{token} — paginate with cursor (single page is only a few rows)
             async function seedHistoricalTrades() {
                 if (!getSolanaTrackerKey()) {
                     if (typeof window.refreshLykeionSecrets === 'function') await window.refreshLykeionSecrets();
@@ -4007,25 +4382,17 @@
                         return;
                     }
                 }
-                const url = 'https://data.solanatracker.io/trades/' + encodeURIComponent(MINT) + '?sortDirection=DESC';
                 try {
-                    const res = await fetch(url, {
-                        cache: 'no-store',
-                        headers: { 'x-api-key': getSolanaTrackerKey() },
-                    });
-                    if (!res.ok) {
-                        console.warn('[SolanaTracker] trades', res.status, MINT);
+                    let trades;
+                    try {
+                        trades = await fetchTradesPaginated(MINT);
+                    } catch (e) {
+                        console.warn('[SolanaTracker] trades', e, MINT);
                         if (!pushTx._buf?.length && termTxListEl) {
-                            termTxListEl.innerHTML = '<div class="tx-empty">Could not load trades (' + res.status + ')</div>';
+                            termTxListEl.innerHTML = '<div class="tx-empty">Could not load trades</div>';
                         }
                         return;
                     }
-                    const json = await res.json();
-                    const trades = Array.isArray(json?.trades)
-                        ? json.trades
-                        : Array.isArray(json)
-                            ? json
-                            : [];
                     if (!trades.length) {
                         if (!pushTx._buf?.length) renderTxs();
                         return;
@@ -4077,37 +4444,7 @@
                         if (mcNew > 0) token.liveMcUsd = mcNew;
                         if (Number.isFinite(pxNew) && pxNew > 0) token.lastPriceUsd = pxNew;
                     }
-                    const fbMc = computeUsdMc();
-                    const refPx = Number(token.lastPriceUsd) || 0;
-
-                    trades.forEach((t) => {
-                        const side = String(t.type || t.txType || '').toLowerCase();
-                        if (side !== 'buy' && side !== 'sell') return;
-                        const fullTrader = String(t.wallet || t.trader || t.traderPublicKey || '');
-                        const trader = fullTrader.slice(0, 4);
-                        const sol = Number(t.volumeSol ?? t.solAmount ?? t.amountSol ?? 0);
-                        const tsRaw = Number(t.time ?? t.timestamp ?? 0);
-                        const at = tsRaw > 1e12 ? tsRaw : (tsRaw > 0 ? tsRaw * 1000 : Date.now());
-                        // Prefer per-trade MC; otherwise derive from priceUsd vs current price/MC ratio.
-                        let mcUsd = mcUsdFromTradePayload(t, 0);
-                        if (!(mcUsd > 0)) {
-                            const px = chartPriceUsdFromSolanaTrade(t);
-                            if (px > 0 && refPx > 0 && fbMc > 0) mcUsd = (px / refPx) * fbMc;
-                        }
-                        if (!(mcUsd > 0)) mcUsd = fbMc;
-                        const txSig = String(t.tx || t.signature || '').trim();
-                        pushTx(side, sol, trader, false, {
-                            fullTrader,
-                            at,
-                            mcUsd,
-                            tx: txSig,
-                        });
-                    });
-
-                    (pushTx._buf || []).forEach((r) => {
-                        if (!r.isMine && devWallet && r.fullTrader === devWallet) r.isDev = true;
-                    });
-                    renderTxs();
+                    ingestTradesIntoTxBuffer(trades);
                     renderStats();
                     renderPosition();
                     renderWalletHud();
@@ -4224,7 +4561,7 @@
             window.setInterval(refreshSolPrice, SOL_PRICE_REFRESH_MS);
             window.setInterval(refreshGeckoStats, GECKO_STATS_REFRESH_MS);
             window.setInterval(refreshDexScreenerSocials, DEX_SOCIALS_REFRESH_MS);
-            window.setInterval(seedHistoricalTrades, 1500);
+            window.setInterval(pollRecentTradesPage, 4000);
             window.setInterval(() => {
                 renderStats();
                 renderPosition();

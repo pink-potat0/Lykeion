@@ -3244,6 +3244,9 @@ h1 {
     font-weight: 700;
     font-family: "Inter", sans-serif;
     line-height: 1;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .page-demo-trading .floating-back-btn {

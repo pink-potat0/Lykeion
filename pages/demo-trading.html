@@ -849,14 +849,34 @@
                 }
             }
 
+            function effectiveSolPriceUsd() {
+                return (Number.isFinite(solPriceUsd) && solPriceUsd > 0) ? solPriceUsd : 170;
+            }
+
             function computeUsdMc(token) {
                 const mcSol = Number(token?.marketCapSol) || 0;
-                return mcSol > 0 ? mcSol * solPriceUsd : 0;
+                const px = effectiveSolPriceUsd();
+                return mcSol > 0 ? mcSol * px : 0;
+            }
+
+            /** Resolve USD MC for quick-buy when live/streaming data is briefly zero. */
+            function resolveMcForQuickBuy(mint, snap) {
+                const tok = tokenMap.get(mint);
+                const px = effectiveSolPriceUsd();
+                if (tok) {
+                    const fromMap = computeUsdMc(tok);
+                    if (fromMap > 0) return fromMap;
+                    const mcSol = Number(tok.marketCapSol) || 0;
+                    if (mcSol > 0) return mcSol * px;
+                }
+                const rowMc = Number(snap.mcUsd) || 0;
+                return rowMc > 0 ? rowMc : 0;
             }
 
             function computeUsdVolume(token) {
                 const volSol = Number(token?.volumeSol) || 0;
-                return volSol > 0 ? volSol * solPriceUsd : 0;
+                const px = effectiveSolPriceUsd();
+                return volSol > 0 ? volSol * px : 0;
             }
 
             function pruneTokens() {
@@ -949,7 +969,7 @@
             }
 
             function emptyRowHtml(message) {
-                return `<article class="demo-token-row is-empty"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong><span class="demo-token-ticker">$LIVE</span><span class="demo-token-name">${escapeHtml(message)}</span></strong><span class="demo-token-age">age --</span></div><div class="demo-token-cap"><span class="demo-cap-mc">MC N/A</span><span class="demo-cap-vol">V N/A</span></div><button class="demo-token-buy" type="button">1 SOL</button></article>`;
+                return `<article class="demo-token-row is-empty"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong><span class="demo-token-ticker">$LIVE</span><span class="demo-token-name">${escapeHtml(message)}</span></strong><span class="demo-token-age">age --</span></div><div class="demo-token-cap"><span class="demo-cap-mc">MC N/A</span><span class="demo-cap-vol">V N/A</span></div><button class="demo-token-buy" type="button" data-quick-buy-sol="1">1 SOL</button></article>`;
             }
 
             function renderEmptyState(message) {
@@ -1628,7 +1648,7 @@
                     const primary = pools.find((p) => /pumpswap/i.test(String(p?.market || ''))) || pools[0] || {};
                     const mc = Number(primary.marketCap?.usd || item.marketCap?.usd || 0) || 0;
                     const shortMint = mint ? `${mint.slice(0, 4)}…${mint.slice(-4)}` : '';
-                    const href = mint ? `demo-trading-terminal?chartonly=1#${encodeURIComponent(mint)}` : '#';
+                    const href = mint ? `demo-trading-terminal.html?chartonly=1#${encodeURIComponent(mint)}` : '#';
                     return `
                         <a class="search-result" href="${escapeHtml(href)}" data-mint="${escapeHtml(mint)}" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(name)}" data-image="${escapeHtml(image)}">
                             ${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.outerHTML='<span class=&quot;no-img&quot;></span>'" />` : '<span class="no-img"></span>'}
@@ -2282,6 +2302,39 @@
                 } catch {}
             }
 
+            function playTradeDenySound() {
+                try {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!AC) return;
+                    const ctx = playTradeDenySound._ctx || (playTradeDenySound._ctx = new AC());
+                    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                    const t0 = ctx.currentTime;
+                    const o1 = ctx.createOscillator();
+                    const g1 = ctx.createGain();
+                    o1.type = 'triangle';
+                    o1.frequency.setValueAtTime(420, t0);
+                    o1.frequency.exponentialRampToValueAtTime(200, t0 + 0.12);
+                    g1.gain.setValueAtTime(0.6, t0);
+                    g1.gain.exponentialRampToValueAtTime(0.001, t0 + 0.15);
+                    o1.connect(g1);
+                    g1.connect(ctx.destination);
+                    o1.start(t0);
+                    o1.stop(t0 + 0.16);
+                    const o2 = ctx.createOscillator();
+                    const g2 = ctx.createGain();
+                    o2.type = 'triangle';
+                    o2.frequency.setValueAtTime(300, t0 + 0.14);
+                    o2.frequency.exponentialRampToValueAtTime(140, t0 + 0.28);
+                    g2.gain.setValueAtTime(0, t0);
+                    g2.gain.setValueAtTime(0.5, t0 + 0.14);
+                    g2.gain.exponentialRampToValueAtTime(0.001, t0 + 0.30);
+                    o2.connect(g2);
+                    g2.connect(ctx.destination);
+                    o2.start(t0 + 0.14);
+                    o2.stop(t0 + 0.32);
+                } catch (_) {}
+            }
+
             const toastStack = document.getElementById('toast-stack');
             function toast(message, type = '') {
                 if (!toastStack) return;
@@ -2299,6 +2352,7 @@
             function executeBuy(mint, amountSol, mcUsdAtClick, snapshot) {
                 if (!mint || !(amountSol > 0)) return false;
                 if (amountSol > wallet.balanceSol + 1e-9) {
+                    playTradeDenySound();
                     toast(`Insufficient balance (${fmtSolPlain(wallet.balanceSol)})`, 'is-err');
                     return false;
                 }
@@ -2306,6 +2360,7 @@
                     toast('No market cap available — can\'t price entry', 'is-err');
                     return false;
                 }
+                playKachingTradeSound();
                 const existing = wallet.positions[mint];
                 const snap = snapshot || getTokenSnapshot(mint) || {};
                 if (existing) {
@@ -2341,7 +2396,7 @@
 
             function executeSell(mint, fractionOfPosition, currentMcUsd) {
                 const pos = wallet.positions[mint];
-                if (!pos) { toast('No position to sell', 'is-err'); return false; }
+                if (!pos) { playTradeDenySound(); toast('No position to sell', 'is-err'); return false; }
                 if (!(currentMcUsd > 0)) { toast('No live MC — can\'t close', 'is-err'); return false; }
                 const f = Math.max(0, Math.min(1, Number(fractionOfPosition) || 0));
                 if (f <= 0) return false;
@@ -2375,6 +2430,29 @@
                 };
             }
 
+            /** True after pointerdown handled a quick-buy; suppresses duplicate click. Keyboard uses click only. */
+            let _quickBuyFromPointer = false;
+
+            function runQuickBuy(row, buyBtn) {
+                const snap = readSnapshotFromRow(row);
+                if (!snap.mint) return;
+                const amount = Number(buyBtn.getAttribute('data-quick-buy-sol')) || 1;
+                const mcForEntry = resolveMcForQuickBuy(snap.mint, snap);
+                executeBuy(snap.mint, amount, mcForEntry, snap);
+            }
+
+            function handleQuickBuyPointerDown(event) {
+                const buyBtn = event.target.closest('.demo-token-buy');
+                if (!buyBtn) return;
+                const row = buyBtn.closest('.demo-token-row');
+                if (!row || row.classList.contains('is-empty')) return;
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+                event.preventDefault();
+                event.stopPropagation();
+                _quickBuyFromPointer = true;
+                runQuickBuy(row, buyBtn);
+            }
+
             function handleColumnClick(event) {
                 const copyBtn = event.target.closest('.demo-token-copy');
                 if (copyBtn) return;
@@ -2388,21 +2466,21 @@
                 if (buyBtn) {
                     event.preventDefault();
                     event.stopPropagation();
-                    const amount = Number(buyBtn.getAttribute('data-quick-buy-sol')) || 1;
-                    // Prefer live MC from the token map (streams in over time); fall back to row snapshot.
-                    const liveTok = tokenMap.get(snap.mint);
-                    const liveMc = liveTok ? computeUsdMc(liveTok) : 0;
-                    const mcForEntry = liveMc > 0 ? liveMc : (snap.mcUsd > 0 ? snap.mcUsd : 0);
-                    const ok = executeBuy(snap.mint, amount, mcForEntry, snap);
-                    if (ok) playKachingTradeSound();
+                    if (_quickBuyFromPointer) {
+                        _quickBuyFromPointer = false;
+                        return;
+                    }
+                    runQuickBuy(row, buyBtn);
                     return;
                 }
                 try { sessionStorage.setItem('lykeion.pendingTerminalSnap', JSON.stringify(snap)); } catch {}
-                window.location.href = 'demo-trading-terminal?chartonly=1#' + encodeURIComponent(snap.mint);
+                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(snap.mint);
             }
-            newColumnList?.addEventListener('click', handleColumnClick);
-            soonColumnList?.addEventListener('click', handleColumnClick);
-            migratedColumnList?.addEventListener('click', handleColumnClick);
+            [newColumnList, soonColumnList, migratedColumnList].forEach((list) => {
+                if (!list) return;
+                list.addEventListener('pointerdown', handleQuickBuyPointerDown, true);
+                list.addEventListener('click', handleColumnClick);
+            });
 
             // Live wallet HUD refresh so PnL updates as MC streams in.
             window.setInterval(() => { renderWalletHud(); }, 1500);
@@ -2484,7 +2562,7 @@
                         }));
                     } catch {}
                 }
-                window.location.href = 'demo-trading-terminal?chartonly=1#' + encodeURIComponent(mint);
+                window.location.href = 'demo-trading-terminal.html?chartonly=1#' + encodeURIComponent(mint);
             });
 
             document.getElementById('wh-reset-btn')?.addEventListener('click', () => {
