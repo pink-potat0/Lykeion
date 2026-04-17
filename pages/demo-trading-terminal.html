@@ -1198,8 +1198,7 @@
              * so it clears the trade card; chart-only embed keeps the corner FAB.
              */
             body.page-demo-trading .terminal-fab-back {
-                bottom: max(42px, calc(24px + env(safe-area-inset-bottom, 0px)));
-                right: max(20px, env(safe-area-inset-right, 0px));
+                display: none;
             }
             .term-main {
                 flex: 1 1 auto;
@@ -1213,9 +1212,9 @@
                 max-width: 100%;
                 min-width: 0;
                 box-sizing: border-box;
-                /* Fixed navbar + safe area; enough bottom pad so trade presets clear the back FAB */
+                /* Fixed navbar + safe area */
                 padding-top: max(72px, env(safe-area-inset-top, 0px));
-                padding-bottom: max(80px, calc(68px + env(safe-area-inset-bottom, 0px)));
+                padding-bottom: max(16px, calc(8px + env(safe-area-inset-bottom, 0px)));
                 padding-left: env(safe-area-inset-left, 0px);
                 padding-right: env(safe-area-inset-right, 0px);
                 gap: 0;
@@ -1344,7 +1343,6 @@
                 order: 3;
                 flex-direction: column;
                 align-items: stretch;
-                /* Grow into spare viewport height so the chart fills instead of leaving a dead band above the footer */
                 flex: 1 1 auto;
                 margin: 0;
                 width: 100%;
@@ -1352,7 +1350,7 @@
                 min-width: 0;
                 box-sizing: border-box;
                 overflow: hidden;
-                min-height: clamp(220px, 32vh, 520px);
+                min-height: clamp(320px, 52vh, 680px);
             }
             .term-chart-row .term-chart-wrap {
                 flex: 1 1 auto;
@@ -1364,7 +1362,7 @@
             }
             .term-chart-wrap--gt .term-chart-inner {
                 flex: 1 1 auto;
-                min-height: clamp(220px, 38vh, 480px);
+                min-height: clamp(320px, 52vh, 680px);
                 overflow: hidden;
             }
             .term-chart-inner > #term-chart {
@@ -1373,7 +1371,7 @@
             }
             .term-chart-wrap--gt #term-chart.term-chart--gt {
                 border-radius: 0 !important;
-                min-height: clamp(220px, 38vh, 480px);
+                min-height: clamp(320px, 52vh, 680px);
                 flex: 1 1 auto;
                 touch-action: auto;
             }
