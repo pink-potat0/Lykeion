@@ -351,6 +351,9 @@ function renderWalletAnalysisWidget(element, payload) {
   const trades = Array.isArray(payload.topTrades) ? payload.topTrades : [];
   const netSol = String(payload.weekProfitSol || "");
   const netClass = netSol.trim().startsWith("-") ? "wallet-net-down" : "wallet-net-up";
+  const hasDeep = payload.deepAnalysis
+    && Array.isArray(payload.deepAnalysis.events)
+    && payload.deepAnalysis.events.length > 0;
   element.classList.add("wallet-analysis-widget");
   element.innerHTML = `
     <div class="launchpad-widget-title">Solana Wallet Analysis</div>
@@ -388,8 +391,171 @@ function renderWalletAnalysisWidget(element, payload) {
       }).join("")}
     </div>
     ${trades.length ? "" : `<div class="wallet-analysis-error">No token trade summaries were found in the last 7 days for this wallet.</div>`}
+    ${hasDeep ? `
+      <button type="button" class="wallet-more-btn" data-action="wallet-more">
+        <span class="wallet-more-label">Get more info</span>
+        <span class="wallet-more-arrow">→</span>
+      </button>
+      <div class="wallet-more-slot" data-slot="wallet-more"></div>
+    ` : ""}
   `;
+
+  if (hasDeep) {
+    const btn = element.querySelector('[data-action="wallet-more"]');
+    const slot = element.querySelector('[data-slot="wallet-more"]');
+    if (btn && slot) {
+      btn.addEventListener("click", async () => {
+        if (btn.dataset.loading === "1" || btn.dataset.loaded === "1") return;
+        btn.dataset.loading = "1";
+        btn.disabled = true;
+        const originalLabel = btn.querySelector(".wallet-more-label");
+        if (originalLabel) originalLabel.textContent = "Crunching…";
+        try {
+          await renderWalletDeepWidgets(slot, payload);
+          btn.dataset.loaded = "1";
+          btn.style.display = "none";
+        } catch (err) {
+          console.error("Deep wallet analysis failed", err);
+          if (originalLabel) originalLabel.textContent = "Try again";
+          btn.disabled = false;
+          delete btn.dataset.loading;
+        }
+        if (container) container.scrollTop = container.scrollHeight;
+      });
+    }
+  }
+
   if (container) container.scrollTop = container.scrollHeight;
+}
+
+async function renderWalletDeepWidgets(slot, payload) {
+  const deep = payload.deepAnalysis || {};
+  const events = Array.isArray(deep.events) ? deep.events : [];
+  const solPeers = Array.isArray(deep.solPeers) ? deep.solPeers : [];
+  const api = (typeof window !== "undefined" && window.LykeionDeep) || {};
+  if (!api.computeTradeHeatmap || !api.computeAvgHoldTime || !api.findSideWallets) {
+    slot.innerHTML = `<div class="wallet-analysis-error">Deep analysis unavailable.</div>`;
+    return;
+  }
+
+  const heatmap = api.computeTradeHeatmap(events);
+  const hold = api.computeAvgHoldTime(events);
+
+  const peerMap = new Map();
+  for (const p of solPeers) peerMap.set(p.address, p);
+
+  const sideWallets = await api.findSideWallets(
+    payload.wallet,
+    events,
+    peerMap,
+  );
+
+  slot.innerHTML = `
+    ${renderHeatmapBlock(heatmap, api.describeHeatmap ? api.describeHeatmap(heatmap) : "")}
+    ${renderHoldTimeBlock(hold, api.formatDuration)}
+    ${renderSideWalletsBlock(sideWallets)}
+  `;
+}
+
+function renderHeatmapBlock(heatmap, description) {
+  if (!heatmap || heatmap.total === 0) {
+    return `
+      <div class="wallet-deep-card">
+        <div class="wallet-deep-title">Trade Frequency</div>
+        <div class="wallet-deep-empty">No timestamps to plot.</div>
+      </div>
+    `;
+  }
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+  const peak = Math.max(1, heatmap.peak);
+  const cells = [];
+  for (let d = 0; d < 7; d++) {
+    cells.push(`<span class="heat-day-label" aria-hidden="true">${dayLabels[d]}</span>`);
+    for (let h = 0; h < 24; h++) {
+      const count = heatmap.grid[d][h];
+      const ratio = count / peak;
+      const title = `${dayLabels[d]} ${String(h).padStart(2, "0")}:00 UTC — ${count} trade${count === 1 ? "" : "s"}`;
+      cells.push(`<span class="heat-cell" style="--heat:${ratio.toFixed(3)}" title="${escapeHtml(title)}"></span>`);
+    }
+  }
+  return `
+    <div class="wallet-deep-card">
+      <div class="wallet-deep-title">Trade Frequency</div>
+      <div class="wallet-deep-sub">${escapeHtml(description || "")}</div>
+      <div class="heat-grid" role="img" aria-label="Trade frequency heatmap by hour and day (UTC)">
+        <span class="heat-corner" aria-hidden="true"></span>
+        ${Array.from({ length: 24 }, (_, h) => h % 6 === 0
+          ? `<span class="heat-hour-label" aria-hidden="true">${String(h).padStart(2, "0")}</span>`
+          : `<span class="heat-hour-label" aria-hidden="true"></span>`).join("")}
+        ${cells.join("")}
+      </div>
+      <div class="wallet-deep-meta">${heatmap.total} trade${heatmap.total === 1 ? "" : "s"} · UTC hours</div>
+    </div>
+  `;
+}
+
+function renderHoldTimeBlock(hold, formatDuration) {
+  if (!hold || !hold.matchedPairs) {
+    return `
+      <div class="wallet-deep-card">
+        <div class="wallet-deep-title">Average Hold Time</div>
+        <div class="wallet-deep-empty">No matched buy→sell pairs in this window.</div>
+      </div>
+    `;
+  }
+  const avg = formatDuration ? formatDuration(hold.avgHoldMs) : `${Math.round(hold.avgHoldMs / 60000)}m`;
+  const fastest = hold.perMint[0];
+  const slowest = hold.perMint[hold.perMint.length - 1];
+  return `
+    <div class="wallet-deep-card">
+      <div class="wallet-deep-title">Average Hold Time</div>
+      <div class="wallet-deep-big">${escapeHtml(avg)}</div>
+      <div class="wallet-deep-meta">${hold.matchedPairs} matched buy→sell pair${hold.matchedPairs === 1 ? "" : "s"}</div>
+      ${fastest && slowest && fastest !== slowest ? `
+        <div class="wallet-deep-row">
+          <span class="wallet-deep-key">Fastest flip</span>
+          <span class="wallet-deep-val">${escapeHtml(formatDuration ? formatDuration(fastest.avgHoldMs) : "")}</span>
+        </div>
+        <div class="wallet-deep-row">
+          <span class="wallet-deep-key">Longest hold</span>
+          <span class="wallet-deep-val">${escapeHtml(formatDuration ? formatDuration(slowest.avgHoldMs) : "")}</span>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function renderSideWalletsBlock(sideWallets) {
+  if (!sideWallets || sideWallets.length === 0) {
+    return `
+      <div class="wallet-deep-card">
+        <div class="wallet-deep-title">Possible Side Wallets</div>
+        <div class="wallet-deep-empty">No linked trading wallets detected.</div>
+      </div>
+    `;
+  }
+  const rows = sideWallets.map((w) => {
+    const short = `${w.address.slice(0, 4)}…${w.address.slice(-4)}`;
+    const tags = [];
+    for (const r of w.reasons) tags.push(r);
+    if (w.sharedMints > 0) tags.push(`${w.sharedMints} shared token${w.sharedMints === 1 ? "" : "s"}`);
+    if (w.tradesTokens) tags.push("Trades actively");
+    return `
+      <div class="side-wallet-row">
+        <a class="side-wallet-addr" href="https://solscan.io/account/${encodeURIComponent(w.address)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(w.address)}">${escapeHtml(short)}</a>
+        <div class="side-wallet-tags">
+          ${tags.map((t) => `<span class="side-wallet-tag">${escapeHtml(t)}</span>`).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+  return `
+    <div class="wallet-deep-card">
+      <div class="wallet-deep-title">Possible Side Wallets</div>
+      <div class="wallet-deep-sub">SOL transfers + shared token entries</div>
+      ${rows}
+    </div>
+  `;
 }
 
 function getTypewriterDelay(length) {

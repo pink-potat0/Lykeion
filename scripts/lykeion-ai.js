@@ -927,6 +927,102 @@ function parseSwaps(txs, walletAddress, holdings) {
   return map;
 }
 
+// ── Deep analysis: per-trade events + SOL peer transfers ─────────
+// Returns { events: [{mint, side, solAmount, tsMs}], solPeers: Map<addr, {outLamports, inLamports, lastTsMs}> }
+function extractDeepTradeEvents(txs, walletAddress) {
+  const events = [];
+  const solPeers = new Map();
+
+  function peer(addr) {
+    let p = solPeers.get(addr);
+    if (!p) { p = { outLamports: 0, inLamports: 0, lastTsMs: 0 }; solPeers.set(addr, p); }
+    return p;
+  }
+
+  for (const tx of Array.isArray(txs) ? txs : []) {
+    const tsRaw = toNumeric(tx.timestamp) || toNumeric(tx.blockTime) || 0;
+    const tsMs = tsRaw > 1e12 ? tsRaw : tsRaw * 1000;
+
+    // SOL native transfers to/from other wallets (skip system/pdas we can't be sure about)
+    if (Array.isArray(tx.nativeTransfers)) {
+      for (const nt of tx.nativeTransfers) {
+        const amt = Number(nt.amount) || 0;
+        if (amt <= 0) continue;
+        if (nt.fromUserAccount === walletAddress && nt.toUserAccount && nt.toUserAccount !== walletAddress) {
+          const p = peer(nt.toUserAccount);
+          p.outLamports += amt;
+          if (tsMs > p.lastTsMs) p.lastTsMs = tsMs;
+        } else if (nt.toUserAccount === walletAddress && nt.fromUserAccount && nt.fromUserAccount !== walletAddress) {
+          const p = peer(nt.fromUserAccount);
+          p.inLamports += amt;
+          if (tsMs > p.lastTsMs) p.lastTsMs = tsMs;
+        }
+      }
+    }
+
+    // Per-trade event inference (mirrors parseSwaps but records each trade as an event)
+    let booked = false;
+    if (tx.events?.swap) {
+      const swap = tx.events.swap;
+      let nativeInLam = swap.nativeInput ? Number(swap.nativeInput.amount) : 0;
+      let nativeOutLam = swap.nativeOutput ? Number(swap.nativeOutput.amount) : 0;
+      if (nativeInLam === 0 || nativeOutLam === 0) {
+        let walletChangeLam = 0;
+        if (tx.accountData) {
+          const wd = tx.accountData.find((a) => a.account === walletAddress);
+          if (wd) walletChangeLam = wd.nativeBalanceChange;
+        }
+        if (nativeInLam === 0 && walletChangeLam < 0) nativeInLam = Math.abs(walletChangeLam);
+        if (nativeOutLam === 0 && walletChangeLam > 0) nativeOutLam = walletChangeLam;
+      }
+      if (nativeInLam > 0) {
+        const solSpent = nativeInLam / 1e9;
+        const tokenOutputs = Array.isArray(swap.tokenOutputs) ? swap.tokenOutputs : [];
+        const mints = tokenOutputs.length > 0
+          ? tokenOutputs.map((t) => t.mint)
+          : (Array.isArray(tx.tokenTransfers) ? tx.tokenTransfers.filter((tt) => tt.toUserAccount === walletAddress && tt.mint !== SOL_MINT && tt.tokenAmount > 0).map((tt) => tt.mint) : []);
+        for (const mint of mints) {
+          if (!mint) continue;
+          events.push({ mint, side: "buy", solAmount: solSpent / mints.length, tsMs });
+          booked = true;
+        }
+      }
+      if (nativeOutLam > 0) {
+        const solReceived = nativeOutLam / 1e9;
+        const tokenInputs = Array.isArray(swap.tokenInputs) ? swap.tokenInputs : [];
+        const mints = tokenInputs.length > 0
+          ? tokenInputs.map((t) => t.mint)
+          : (Array.isArray(tx.tokenTransfers) ? tx.tokenTransfers.filter((tt) => tt.fromUserAccount === walletAddress && tt.mint !== SOL_MINT && tt.tokenAmount > 0).map((tt) => tt.mint) : []);
+        for (const mint of mints) {
+          if (!mint) continue;
+          events.push({ mint, side: "sell", solAmount: solReceived / mints.length, tsMs });
+          booked = true;
+        }
+      }
+    }
+
+    if (!booked && Array.isArray(tx.tokenTransfers) && tx.tokenTransfers.length > 0) {
+      let walletSolChangeLam = 0;
+      if (tx.accountData) {
+        const wd = tx.accountData.find((a) => a.account === walletAddress);
+        if (wd) walletSolChangeLam = wd.nativeBalanceChange;
+      }
+      const tokensIn = tx.tokenTransfers.filter((tt) => tt.mint !== SOL_MINT && tt.tokenAmount > 0 && tt.toUserAccount === walletAddress);
+      const tokensOut = tx.tokenTransfers.filter((tt) => tt.mint !== SOL_MINT && tt.tokenAmount > 0 && tt.fromUserAccount === walletAddress);
+      const solChangeSol = walletSolChangeLam / 1e9;
+      if (solChangeSol < -0.005 && tokensIn.length > 0) {
+        const spent = Math.abs(solChangeSol);
+        for (const t of tokensIn) events.push({ mint: t.mint, side: "buy", solAmount: spent / tokensIn.length, tsMs });
+      }
+      if (solChangeSol > 0.005 && tokensOut.length > 0) {
+        for (const t of tokensOut) events.push({ mint: t.mint, side: "sell", solAmount: solChangeSol / tokensOut.length, tsMs });
+      }
+    }
+  }
+
+  return { events, solPeers };
+}
+
 // ── DexScreener batch price + name fetch ─────────────────────────
 async function fetchCurrentPricesAndNames(mints) {
   const prices = new Map();
@@ -1388,6 +1484,148 @@ function formatSolAmount(value) {
   return `${num.toFixed(2)} SOL`;
 }
 
+// ── Deep analysis: heatmap, hold time, side wallets ──────────────
+function computeTradeHeatmap(events) {
+  const grid = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  let total = 0;
+  for (const ev of events) {
+    if (!ev || !ev.tsMs) continue;
+    const d = new Date(ev.tsMs);
+    if (Number.isNaN(d.getTime())) continue;
+    const dow = d.getUTCDay();
+    const hr = d.getUTCHours();
+    grid[dow][hr] += 1;
+    total += 1;
+  }
+  let peak = 0;
+  for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) if (grid[d][h] > peak) peak = grid[d][h];
+  return { grid, total, peak };
+}
+
+function describeHeatmap(heatmap) {
+  if (!heatmap || heatmap.total === 0) return "No timestamps to profile.";
+  const { grid, total } = heatmap;
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let peakDay = 0, peakHour = 0, peakCount = 0;
+  const hourTotals = new Array(24).fill(0);
+  for (let d = 0; d < 7; d++) {
+    for (let h = 0; h < 24; h++) {
+      hourTotals[h] += grid[d][h];
+      if (grid[d][h] > peakCount) { peakCount = grid[d][h]; peakDay = d; peakHour = h; }
+    }
+  }
+  // Classify: bot (spread across all 24h), late-night (00-05 UTC cluster), scheduled (single dominant hour)
+  const activeHours = hourTotals.filter((c) => c > 0).length;
+  const lateNightShare = (hourTotals[0] + hourTotals[1] + hourTotals[2] + hourTotals[3] + hourTotals[4] + hourTotals[5]) / total;
+  const topShare = peakCount / total;
+  let profile = "Active trader";
+  if (activeHours >= 18) profile = "Likely bot / 24h activity";
+  else if (topShare > 0.35) profile = "Scheduled / narrow window";
+  else if (lateNightShare > 0.4) profile = "Late-night degen (UTC)";
+  return `Peak: ${dayLabels[peakDay]} ${String(peakHour).padStart(2, "0")}:00 UTC · ${profile}`;
+}
+
+function computeAvgHoldTime(events) {
+  const byMint = new Map();
+  for (const ev of events) {
+    if (!ev || !ev.mint) continue;
+    let list = byMint.get(ev.mint);
+    if (!list) { list = []; byMint.set(ev.mint, list); }
+    list.push(ev);
+  }
+  const holdMsSamples = [];
+  const perMint = [];
+  byMint.forEach((list, mint) => {
+    list.sort((a, b) => a.tsMs - b.tsMs);
+    const buyQueue = [];
+    let matched = 0;
+    let totalHoldMs = 0;
+    for (const ev of list) {
+      if (ev.side === "buy") buyQueue.push(ev);
+      else if (ev.side === "sell" && buyQueue.length > 0) {
+        const buy = buyQueue.shift();
+        const dt = ev.tsMs - buy.tsMs;
+        if (dt > 0) { totalHoldMs += dt; matched += 1; holdMsSamples.push(dt); }
+      }
+    }
+    if (matched > 0) perMint.push({ mint, avgHoldMs: totalHoldMs / matched, matched });
+  });
+  if (!holdMsSamples.length) return { avgHoldMs: 0, matchedPairs: 0, perMint: [] };
+  const avg = holdMsSamples.reduce((a, b) => a + b, 0) / holdMsSamples.length;
+  perMint.sort((a, b) => a.avgHoldMs - b.avgHoldMs);
+  return { avgHoldMs: avg, matchedPairs: holdMsSamples.length, perMint };
+}
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return "—";
+  const s = ms / 1000;
+  if (s < 60) return `${Math.round(s)}s`;
+  const m = s / 60;
+  if (m < 60) return `${m.toFixed(m < 10 ? 1 : 0)}m`;
+  const h = m / 60;
+  if (h < 24) return `${h.toFixed(h < 10 ? 1 : 0)}h`;
+  const d = h / 24;
+  return `${d.toFixed(d < 10 ? 1 : 0)}d`;
+}
+
+async function findSideWallets(wallet, events, solPeers) {
+  const candidates = new Map();
+
+  function addCandidate(addr, reason, weight) {
+    if (!addr || addr === wallet) return;
+    let c = candidates.get(addr);
+    if (!c) { c = { address: addr, reasons: new Set(), score: 0 }; candidates.set(addr, c); }
+    c.reasons.add(reason);
+    c.score += weight;
+  }
+
+  // Reason A: SOL sent to this wallet (outflow ≥ 0.05 SOL)
+  solPeers.forEach((p, addr) => {
+    if (p.outLamports / 1e9 >= 0.05) addCandidate(addr, `Received ${(p.outLamports / 1e9).toFixed(2)} SOL`, 2);
+  });
+
+  // Rank candidates, keep top 6 to probe
+  const ranked = Array.from(candidates.values()).sort((a, b) => b.score - a.score).slice(0, 6);
+  if (!ranked.length) return [];
+
+  // Probe each: fetch a small slice of txs and check if they have swap events / token transfers
+  const hk = getHeliusKey();
+  if (!hk) return ranked.map((c) => ({ address: c.address, reasons: Array.from(c.reasons), tradesTokens: null, sharedMints: 0 }));
+
+  const walletMints = new Set(events.map((e) => e.mint).filter(Boolean));
+
+  const confirmed = await Promise.all(ranked.map(async (c) => {
+    try {
+      const url = `https://api.helius.xyz/v0/addresses/${encodeURIComponent(c.address)}/transactions?api-key=${encodeURIComponent(hk)}&limit=25`;
+      const res = await fetch(url);
+      if (!res.ok) return { address: c.address, reasons: Array.from(c.reasons), tradesTokens: false, sharedMints: 0 };
+      const data = await res.json();
+      const rows = Array.isArray(data) ? data : [];
+      let swaps = 0;
+      const peerMints = new Set();
+      for (const tx of rows) {
+        if (tx.events?.swap) swaps += 1;
+        if (Array.isArray(tx.tokenTransfers)) {
+          for (const tt of tx.tokenTransfers) if (tt.mint && tt.mint !== SOL_MINT) peerMints.add(tt.mint);
+        }
+      }
+      let shared = 0;
+      peerMints.forEach((m) => { if (walletMints.has(m)) shared += 1; });
+      return {
+        address: c.address,
+        reasons: Array.from(c.reasons),
+        tradesTokens: swaps > 0 || peerMints.size > 0,
+        sharedMints: shared,
+      };
+    } catch {
+      return { address: c.address, reasons: Array.from(c.reasons), tradesTokens: false, sharedMints: 0 };
+    }
+  }));
+
+  // Only keep those that actually trade OR share mints
+  return confirmed.filter((c) => c.tradesTokens || c.sharedMints > 0);
+}
+
 async function getWalletAnalysisPayload(userMessage) {
   if (!isWalletAnalysisIntent(userMessage)) return null;
   const wallet = extractTokenAddress(userMessage);
@@ -1437,6 +1675,7 @@ async function getWalletAnalysisPayload(userMessage) {
 
     // 2. Parse swaps using the two-strategy approach
     const swapMap = parseSwaps(txs, wallet, holdings);
+    const deep = extractDeepTradeEvents(txs, wallet);
 
     // 3. Fetch current prices + names from DexScreener for all mints
     const allMints = Array.from(new Set([
@@ -1509,6 +1748,12 @@ async function getWalletAnalysisPayload(userMessage) {
       );
     }
 
+    // Serialize solPeers for transport (Map → Array)
+    const solPeersArr = [];
+    deep.solPeers.forEach((p, addr) => {
+      solPeersArr.push({ address: addr, outLamports: p.outLamports, inLamports: p.inLamports, lastTsMs: p.lastTsMs });
+    });
+
     return {
       kind: "wallet_analysis_widget",
       wallet,
@@ -1519,6 +1764,10 @@ async function getWalletAnalysisPayload(userMessage) {
       topTrades,
       errorMessage: "",
       textSummary: `Wallet ${wallet} | Balance ${currentSol.toFixed(2)} SOL (${formatCompactUsd(currentUsd)}) | PnL ${formatSignedSol(totalPnlSol)}`,
+      deepAnalysis: {
+        events: deep.events,
+        solPeers: solPeersArr,
+      },
     };
   } catch {
     return errorResult("Wallet analysis failed. Please try again.");
@@ -2077,6 +2326,17 @@ function initLykeionChatUi() {
     chatInput.disabled = isDisabled;
     if (sendBtn) sendBtn.disabled = isDisabled;
   }
+}
+
+// Expose deep-analysis helpers to the chat UI layer (chat-ui.js)
+if (typeof window !== "undefined") {
+  window.LykeionDeep = {
+    computeTradeHeatmap,
+    describeHeatmap,
+    computeAvgHoldTime,
+    formatDuration,
+    findSideWallets,
+  };
 }
 
 // This script may be injected after DOMContentLoaded (via bootstrap-secrets-remote),

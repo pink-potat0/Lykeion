@@ -4,3 +4,4 @@ node_modules/
 !.env.example
 *.local
 scripts/local-secrets.js
+.claude/
