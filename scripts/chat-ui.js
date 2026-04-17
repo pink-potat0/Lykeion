@@ -466,30 +466,66 @@ function renderHeatmapBlock(heatmap, description) {
       </div>
     `;
   }
-  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
-  const peak = Math.max(1, heatmap.peak);
-  const cells = [];
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const hourTotals = new Array(24).fill(0);
+  const dayTotals = new Array(7).fill(0);
   for (let d = 0; d < 7; d++) {
-    cells.push(`<span class="heat-day-label" aria-hidden="true">${dayLabels[d]}</span>`);
     for (let h = 0; h < 24; h++) {
-      const count = heatmap.grid[d][h];
-      const ratio = count / peak;
-      const title = `${dayLabels[d]} ${String(h).padStart(2, "0")}:00 UTC — ${count} trade${count === 1 ? "" : "s"}`;
-      cells.push(`<span class="heat-cell" style="--heat:${ratio.toFixed(3)}" title="${escapeHtml(title)}"></span>`);
+      hourTotals[h] += heatmap.grid[d][h];
+      dayTotals[d] += heatmap.grid[d][h];
     }
   }
+  const hourPeak = Math.max(1, ...hourTotals);
+  const dayPeak = Math.max(1, ...dayTotals);
+
+  let peakHour = 0, peakHourCount = 0;
+  hourTotals.forEach((c, h) => { if (c > peakHourCount) { peakHourCount = c; peakHour = h; } });
+  let peakDay = 0, peakDayCount = 0;
+  dayTotals.forEach((c, d) => { if (c > peakDayCount) { peakDayCount = c; peakDay = d; } });
+
+  const hourBars = hourTotals.map((count, h) => {
+    const ratio = count / hourPeak;
+    const isPeak = h === peakHour && count > 0;
+    const title = `${String(h).padStart(2, "0")}:00 UTC · ${count} trade${count === 1 ? "" : "s"}`;
+    return `
+      <div class="hour-bar-col" title="${escapeHtml(title)}">
+        <div class="hour-bar-fill${isPeak ? " hour-bar-peak" : ""}" style="height:${(ratio * 100).toFixed(1)}%"></div>
+      </div>
+    `;
+  }).join("");
+
+  const hourAxis = [0, 6, 12, 18, 24].map((h) => `<span>${String(h % 24).padStart(2, "0")}</span>`).join("");
+
+  const dayRows = dayTotals.map((count, d) => {
+    const ratio = count / dayPeak;
+    const isPeak = d === peakDay && count > 0;
+    return `
+      <div class="day-row">
+        <span class="day-row-label">${dayLabels[d]}</span>
+        <div class="day-row-track">
+          <div class="day-row-fill${isPeak ? " day-row-peak" : ""}" style="width:${(ratio * 100).toFixed(1)}%"></div>
+        </div>
+        <span class="day-row-count">${count}</span>
+      </div>
+    `;
+  }).join("");
+
   return `
     <div class="wallet-deep-card">
       <div class="wallet-deep-title">Trade Frequency</div>
       <div class="wallet-deep-sub">${escapeHtml(description || "")}</div>
-      <div class="heat-grid" role="img" aria-label="Trade frequency heatmap by hour and day (UTC)">
-        <span class="heat-corner" aria-hidden="true"></span>
-        ${Array.from({ length: 24 }, (_, h) => h % 6 === 0
-          ? `<span class="heat-hour-label" aria-hidden="true">${String(h).padStart(2, "0")}</span>`
-          : `<span class="heat-hour-label" aria-hidden="true"></span>`).join("")}
-        ${cells.join("")}
+
+      <div class="freq-section-title">By hour (UTC)</div>
+      <div class="hour-bar-chart" role="img" aria-label="Trades by hour of day">
+        ${hourBars}
       </div>
-      <div class="wallet-deep-meta">${heatmap.total} trade${heatmap.total === 1 ? "" : "s"} · UTC hours</div>
+      <div class="hour-bar-axis" aria-hidden="true">${hourAxis}</div>
+
+      <div class="freq-section-title">By day of week</div>
+      <div class="day-row-chart">${dayRows}</div>
+
+      <div class="wallet-deep-meta">${heatmap.total} trade${heatmap.total === 1 ? "" : "s"} analyzed</div>
     </div>
   `;
 }

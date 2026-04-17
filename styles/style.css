@@ -2556,34 +2556,101 @@ h1 {
     font-weight: 600;
 }
 
-.heat-grid {
-    display: grid;
-    grid-template-columns: 18px repeat(24, minmax(0, 1fr));
-    grid-auto-rows: 14px;
-    gap: 2px;
+.freq-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     margin-top: 4px;
 }
 
-.heat-corner,
-.heat-hour-label,
-.heat-day-label {
-    font-size: 0.6rem;
-    color: var(--text-secondary);
+.hour-bar-chart {
+    display: grid;
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+    gap: 3px;
+    align-items: end;
+    height: 72px;
+    padding: 4px 2px 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hour-bar-col {
+    position: relative;
+    height: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    line-height: 1;
 }
 
-.heat-cell {
-    border-radius: 2px;
-    background: rgba(var(--accent-rgb), calc(var(--heat) * 0.85 + 0.04));
-    transition: transform 120ms ease;
+.hour-bar-fill {
+    width: 100%;
+    min-height: 2px;
+    background: rgba(var(--accent-rgb), 0.55);
+    border-radius: 2px 2px 0 0;
+    transition: background 120ms ease, transform 120ms ease;
 }
 
-.heat-cell:hover {
-    transform: scale(1.35);
-    z-index: 1;
+.hour-bar-col:hover .hour-bar-fill {
+    background: rgba(var(--accent-rgb), 0.85);
+}
+
+.hour-bar-peak {
+    background: rgba(var(--accent-rgb), 0.95) !important;
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.35);
+}
+
+.hour-bar-axis {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 2px 0;
+    font-size: 0.64rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.day-row-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.day-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 28px;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.74rem;
+}
+
+.day-row-label {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.day-row-track {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.day-row-fill {
+    height: 100%;
+    background: rgba(var(--accent-rgb), 0.55);
+    border-radius: 999px;
+    transition: width 240ms ease;
+}
+
+.day-row-peak {
+    background: rgba(var(--accent-rgb), 0.95);
+}
+
+.day-row-count {
+    text-align: right;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
 }
 
 .side-wallet-row {
@@ -3165,10 +3232,18 @@ h1 {
         white-space: nowrap;
     }
 
-    .heat-grid {
-        grid-template-columns: 14px repeat(24, minmax(0, 1fr));
-        grid-auto-rows: 11px;
-        gap: 1.5px;
+    .hour-bar-chart {
+        height: 60px;
+        gap: 2px;
+    }
+
+    .hour-bar-axis {
+        font-size: 0.6rem;
+    }
+
+    .day-row {
+        grid-template-columns: 32px minmax(0, 1fr) 24px;
+        font-size: 0.7rem;
     }
 
     .wallet-deep-big {
