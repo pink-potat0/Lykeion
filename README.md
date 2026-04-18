@@ -15,8 +15,6 @@ Live: [lykeion.app](https://lykeion.app)
 
 ---
 
-## Screenshots
-
 ### Demo Trading Terminal
 ![Lykeion Terminal](docs/screenshots/terminal.png)
 
