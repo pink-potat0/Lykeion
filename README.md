@@ -4,6 +4,7 @@ Learn to trade Solana memecoins — lessons, practice tools, and an AI trading a
 
 Live: [lykeion.app](https://lykeion.app)
 
+$LYKEION CA 3GWpjiGgTo2RckTLRo71AJijvxkhescZ4QgSGWdPbpump
 ---
 
 ## What's inside
