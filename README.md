@@ -79,9 +79,3 @@ FIREBASE_APP_ID=...
 ```
 
 Secrets are exposed to the client through `/api/lykeion-secrets` and `/api/firebase-config` — only the non-sensitive keys are forwarded.
-
----
-
-## Credits
-
-Built by [@_ppotat0](https://x.com/_ppotat0). Wallet analysis runs on [@heliuslabs](https://www.helius.dev/).
