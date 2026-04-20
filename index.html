@@ -18,6 +18,11 @@
     
     <nav class="navbar">
         <span class="nav-logo">Lykeion</span>
+        <button type="button" class="ca-badge" data-ca="GWpjiGgTo2RckTLRo71AJijvxkhescZ4QgSGWdPbpump" title="Click to copy Lykeion CA">
+            <span class="ca-label">CA</span>
+            <span class="ca-value">GWpji...pump</span>
+            <span class="ca-copy" aria-hidden="true">⧉</span>
+        </button>
         <a href="https://x.com/_ppotat0"><img src="assets/icons/icons8-x-50.png" alt="Close" class="x-icon"></a>
     </nav>
     
@@ -37,6 +42,34 @@
         </button>
     </main>
     <script src="scripts/cursor-utils.js"></script>
+    <script>
+        (function () {
+            const badge = document.querySelector('.ca-badge');
+            if (!badge) return;
+            badge.addEventListener('click', async () => {
+                const ca = badge.getAttribute('data-ca');
+                if (!ca) return;
+                try {
+                    await navigator.clipboard.writeText(ca);
+                } catch (err) {
+                    const ta = document.createElement('textarea');
+                    ta.value = ca;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand('copy'); } catch (_) {}
+                    ta.remove();
+                }
+                badge.classList.add('is-copied');
+                const valEl = badge.querySelector('.ca-value');
+                const prev = valEl ? valEl.textContent : '';
+                if (valEl) valEl.textContent = 'copied';
+                setTimeout(() => {
+                    badge.classList.remove('is-copied');
+                    if (valEl) valEl.textContent = prev;
+                }, 1200);
+            });
+        })();
+    </script>
     <script src="index.js"></script>
     <script src="/scripts/vercel-analytics.js"></script>
     <footer class="footer">

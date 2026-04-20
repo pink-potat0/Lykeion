@@ -208,6 +208,78 @@ main, nav, header, section, .content, .navbar {
     opacity: 1;
 }
 
+.ca-badge {
+    margin-left: auto;
+    margin-right: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(var(--accent-rgb), 0.75);
+    background: rgba(var(--accent-rgb), 0.18);
+    color: #fff;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.ca-badge:hover {
+    background: rgba(var(--accent-rgb), 0.3);
+    border-color: rgba(var(--accent-rgb), 1);
+    transform: translateY(-1px);
+}
+
+.ca-badge:active {
+    transform: translateY(0);
+}
+
+.ca-badge .ca-label {
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.95);
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(var(--accent-rgb), 0.45);
+    font-size: 11px;
+}
+
+.ca-badge .ca-value {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.ca-badge .ca-copy {
+    opacity: 0.85;
+    font-size: 14px;
+}
+
+.ca-badge.is-copied {
+    border-color: rgba(120, 220, 160, 0.9);
+    background: rgba(120, 220, 160, 0.2);
+    color: rgb(200, 250, 215);
+}
+
+.ca-badge.is-copied .ca-label {
+    background: rgba(120, 220, 160, 0.45);
+}
+
+@media (max-width: 600px) {
+    .ca-badge {
+        padding: 7px 12px;
+        font-size: 12px;
+        gap: 6px;
+        margin-right: 10px;
+    }
+    .ca-badge .ca-label {
+        font-size: 10px;
+        padding: 2px 5px;
+    }
+}
+
 h1 {
     font-family: "Inter", sans-serif;
     font-size: 24px;
@@ -3341,8 +3413,76 @@ h1 {
     font-size: 1.05rem;
     line-height: 1.2;
     font-weight: 700;
-    margin: 2px 2px 8px;
+    margin: 2px 2px 0;
     text-transform: lowercase;
+}
+
+.demo-board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.lp-filter {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+}
+
+.lp-chip {
+    width: 26px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.35;
+    filter: grayscale(0.7);
+    transition: opacity 120ms ease, background 120ms ease, filter 120ms ease;
+}
+
+.lp-chip:hover {
+    opacity: 0.75;
+}
+
+.lp-chip.is-active {
+    opacity: 1;
+    filter: none;
+    background: rgba(var(--accent-rgb), 0.22);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.55);
+}
+
+.demo-token-tag--lp {
+    gap: 3px;
+}
+
+.lp-tag-emoji {
+    font-size: 0.78rem;
+    line-height: 1;
+}
+
+.demo-token-tag--pump {
+    background: rgba(var(--accent-rgb), 0.22);
+    border-color: rgba(var(--accent-rgb), 0.52);
+}
+
+.demo-token-tag--bonk {
+    background: rgba(255, 153, 51, 0.2);
+    border-color: rgba(255, 153, 51, 0.55);
+}
+
+.demo-token-tag--bags {
+    background: rgba(255, 214, 102, 0.2);
+    border-color: rgba(255, 214, 102, 0.55);
 }
 
 .demo-token-list {

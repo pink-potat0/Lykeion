@@ -552,6 +552,7 @@
         </div>
     </nav>
 
+    
     <div class="toast-stack" id="toast-stack"></div>
 
     <div class="portfolio-modal-root" id="positions-panel" hidden>
@@ -604,7 +605,14 @@
         </div>
         <div class="demo-board-columns">
             <section class="demo-board-column is-active" data-tab="new">
-                <h2 class="demo-board-title">new</h2>
+                <div class="demo-board-head">
+                    <h2 class="demo-board-title">new</h2>
+                    <div class="lp-filter" data-lp-filter="new" role="group" aria-label="Filter by launchpad">
+                        <button type="button" class="lp-chip is-active" data-lp="pump" title="Pump.fun">💊</button>
+                        <button type="button" class="lp-chip is-active" data-lp="bonk" title="LetsBonk">🐶</button>
+                        <button type="button" class="lp-chip is-active" data-lp="bags" title="Bags">💰</button>
+                    </div>
+                </div>
                 <div class="demo-token-list">
                     <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
                     <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
@@ -617,7 +625,14 @@
             </section>
 
             <section class="demo-board-column" data-tab="soon">
-                <h2 class="demo-board-title">soon</h2>
+                <div class="demo-board-head">
+                    <h2 class="demo-board-title">soon</h2>
+                    <div class="lp-filter" data-lp-filter="soon" role="group" aria-label="Filter by launchpad">
+                        <button type="button" class="lp-chip is-active" data-lp="pump" title="Pump.fun">💊</button>
+                        <button type="button" class="lp-chip is-active" data-lp="bonk" title="LetsBonk">🐶</button>
+                        <button type="button" class="lp-chip is-active" data-lp="bags" title="Bags">💰</button>
+                    </div>
+                </div>
                 <div class="demo-token-list">
                     <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
                     <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
@@ -630,7 +645,14 @@
             </section>
 
             <section class="demo-board-column" data-tab="migrated">
-                <h2 class="demo-board-title">migrated</h2>
+                <div class="demo-board-head">
+                    <h2 class="demo-board-title">migrated</h2>
+                    <div class="lp-filter" data-lp-filter="migrated" role="group" aria-label="Filter by launchpad">
+                        <button type="button" class="lp-chip is-active" data-lp="pump" title="Pump.fun">💊</button>
+                        <button type="button" class="lp-chip is-active" data-lp="bonk" title="LetsBonk">🐶</button>
+                        <button type="button" class="lp-chip is-active" data-lp="bags" title="Bags">💰</button>
+                    </div>
+                </div>
                 <div class="demo-token-list">
                     <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
                     <article class="demo-token-row"><span class="demo-token-icon"></span><div class="demo-token-meta"><strong>TICKER tokenname</strong><span>token links</span></div><div class="demo-token-cap">v1K mc8K</div><button class="demo-token-buy">1 SOL</button></article>
@@ -693,6 +715,27 @@
             const tokenMap = new Map();
             const subscribedMints = new Set();
             const metadataFetched = new Set();
+            // Launchpad filter state — per column, tokens from checked launchpads are shown
+            const LAUNCHPADS = ['pump', 'bonk', 'bags'];
+            const LAUNCHPAD_META = {
+                pump: { emoji: '💊', label: 'PUMP', coinUrl: (m) => m ? `https://pump.fun/coin/${m}` : 'https://pump.fun' },
+                bonk: { emoji: '🐶', label: 'BONK', coinUrl: (m) => m ? `https://letsbonk.fun/token/${m}` : 'https://letsbonk.fun' },
+                bags: { emoji: '💰', label: 'BAGS', coinUrl: (m) => m ? `https://bags.fm/${m}` : 'https://bags.fm' }
+            };
+            const launchpadFilters = {
+                new: new Set(LAUNCHPADS),
+                soon: new Set(LAUNCHPADS),
+                migrated: new Set(LAUNCHPADS)
+            };
+            function detectLaunchpadFromMarket(market) {
+                const m = String(market || '').toLowerCase();
+                if (!m) return '';
+                if (m.includes('pump')) return 'pump';
+                if (m.includes('bonk') || m.includes('launchlab') || m.includes('letsbonk')) return 'bonk';
+                if (m.includes('bags')) return 'bags';
+                if (m.includes('raydium')) return 'pump'; // pump graduates to raydium/pumpswap
+                return '';
+            }
             let solPriceUsd = 170;
             let ws = null;
             let wsReconnectTimer = null;
@@ -781,14 +824,16 @@
                 const volSource = Number(token?.volume_24h || token?.volume || token?.total_volume || 0);
                 const volText = volSource > 0 ? `$${formatCompactNumber(volSource)}` : 'N/A';
                 const iconUrl = token?.image_uri ? escapeHtml(ipfsToHttp(token.image_uri)) : '';
-                const href = mint ? `https://pump.fun/coin/${mint}` : 'https://pump.fun';
+                const lp = token?.launchpad && LAUNCHPAD_META[token.launchpad] ? token.launchpad : 'pump';
+                const lpMeta = LAUNCHPAD_META[lp];
+                const href = lpMeta.coinUrl(token?.mint || '');
                 const createdMs = parseCreatedMs(token?.created_timestamp);
                 const ageText = escapeHtml(formatAgeFromMs(createdMs));
                 const socialTags = [
                     buildTag('TW', token?.twitter),
                     buildTag('WEB', token?.website),
                     buildTag('TG', token?.telegram),
-                    `<a class="demo-token-tag" href="${href}" target="_blank" rel="noopener noreferrer">PUMP</a>`
+                    `<a class="demo-token-tag demo-token-tag--lp demo-token-tag--${lp}" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(lpMeta.label)}"><span class="lp-tag-emoji">${lpMeta.emoji}</span> ${escapeHtml(lpMeta.label)}</a>`
                 ].filter(Boolean).join('');
                 const copyButton = mint
                     ? `<button class="demo-token-copy" type="button" data-ca="${mint}" title="Copy CA">${mint.slice(0, 6)}...${mint.slice(-4)}</button>`
@@ -913,11 +958,17 @@
                 };
             }
 
+            function tokenLaunchpad(token) {
+                return (token && token.launchpad && LAUNCHPAD_META[token.launchpad]) ? token.launchpad : 'pump';
+            }
+
             function getRenderableNewTokens() {
                 const nowMs = Date.now();
+                const allowed = launchpadFilters.new;
                 const out = [];
                 for (const token of tokenMap.values()) {
                     if (token.migrated) continue;
+                    if (!allowed.has(tokenLaunchpad(token))) continue;
                     const ageSec = Math.max(0, Math.floor((nowMs - token.createdMs) / 1000));
                     if (ageSec > MAX_TOKEN_AGE_SECONDS) continue;
                     const mcUsd = computeUsdMc(token);
@@ -933,9 +984,11 @@
             }
 
             function getRenderableSoonTokens() {
+                const allowed = launchpadFilters.soon;
                 const out = [];
                 for (const token of tokenMap.values()) {
                     if (token.migrated) continue;
+                    if (!allowed.has(tokenLaunchpad(token))) continue;
                     const mcUsd = computeUsdMc(token);
                     if (!Number.isFinite(mcUsd) || mcUsd < MIN_SOON_MC_USD) continue;
                     const volUsd = computeUsdVolume(token);
@@ -947,9 +1000,11 @@
             }
 
             function getRenderableMigratedTokens() {
+                const allowed = launchpadFilters.migrated;
                 const out = [];
                 for (const token of tokenMap.values()) {
                     if (!token.migrated) continue;
+                    if (!allowed.has(tokenLaunchpad(token))) continue;
                     const migratedAt = Number(token.migratedAtMs) || 0;
                     if (!migratedAt) continue;
                     const mcUsd = computeUsdMc(token);
@@ -984,7 +1039,7 @@
                     const tokens = getRenderableNewTokens();
                     if (!tokens.length) {
                         const msg = tokenMap.size === 0
-                            ? 'Waiting for new pump.fun tokens...'
+                            ? 'Waiting for new tokens...'
                             : `Tracking ${tokenMap.size} tokens, none in $${(MIN_MC_USD/1000).toFixed(1)}K-$${(MAX_MC_USD/1000).toFixed(0)}K MC yet`;
                         newColumnList.innerHTML = emptyRowHtml(msg);
                     } else {
@@ -1134,7 +1189,8 @@
                     lastDexUpdateMs: Date.now(),
                     qualified: mcUsd >= MIN_MC_USD && mcUsd <= MAX_MC_USD,
                     migrated,
-                    migratedAtMs: migrated ? (createdAt || Date.now()) : 0
+                    migratedAtMs: migrated ? (createdAt || Date.now()) : 0,
+                    launchpad: 'pump'
                 });
                 if (!migrated) subscribeTokenTrade(mint);
                 return true;
@@ -1272,10 +1328,16 @@
                     if (!existing.twitter && tok.twitter) existing.twitter = tok.twitter;
                     if (!existing.website && tok.website) existing.website = tok.website;
                     if (!existing.telegram && tok.telegram) existing.telegram = tok.telegram;
+                    if (!existing.launchpad) {
+                        const mkt = pumpswapPool?.market || firstPool?.market || '';
+                        existing.launchpad = detectLaunchpadFromMarket(mkt) || 'pump';
+                    }
                     existing.lastDexUpdateMs = Date.now();
                     unsubscribeTokenTrade(mint);
                     return true;
                 }
+                const sourceMarket = pumpswapPool?.market || firstPool?.market || pumpswapPool?.dex || firstPool?.dex || tok.source || '';
+                const launchpad = detectLaunchpadFromMarket(sourceMarket) || 'pump';
                 tokenMap.set(mint, {
                     mint,
                     symbol: String(tok.symbol || 'TKN').trim() || 'TKN',
@@ -1294,46 +1356,150 @@
                     lastDexUpdateMs: Date.now(),
                     qualified: false,
                     migrated: true,
-                    migratedAtMs
+                    migratedAtMs,
+                    launchpad
                 });
                 return true;
             }
 
             let solanaTrackerSampleLogged = false;
+            const ST_LAUNCHPAD_MARKETS = [
+                { lp: 'pump', market: 'pumpfun' },
+                { lp: 'pump', market: 'pump.fun' },
+                { lp: 'bonk', market: 'letsbonk.fun' },
+                { lp: 'bonk', market: 'launchlab' },
+                { lp: 'bags', market: 'bags.fun' }
+            ];
+
+            function extractListFromStResponse(data) {
+                return Array.isArray(data)
+                    ? data
+                    : Array.isArray(data?.data) ? data.data
+                    : Array.isArray(data?.tokens) ? data.tokens
+                    : Array.isArray(data?.results) ? data.results
+                    : [];
+            }
+
             async function fetchGraduatedFromSolanaTracker() {
                 if (!getSolanaTrackerKey() && typeof window.refreshLykeionSecrets === 'function') {
                     await window.refreshLykeionSecrets();
                 }
-                if (!getSolanaTrackerKey()) return;
-                for (const url of SOLANA_TRACKER_GRADUATED_URLS) {
+                const key = getSolanaTrackerKey();
+                if (!key) return;
+                // Pull graduated per launchpad so each has dedicated representation
+                const urls = [
+                    ...ST_LAUNCHPAD_MARKETS.map(({ market }) =>
+                        `https://data.solanatracker.io/tokens/multi/graduated?limit=100&markets=${encodeURIComponent(market)}`
+                    ),
+                    ...SOLANA_TRACKER_GRADUATED_URLS
+                ];
+                let totalChanged = 0;
+                for (const url of urls) {
                     try {
-                        const res = await fetch(url, {
-                            cache: 'no-store',
-                            headers: { 'x-api-key': getSolanaTrackerKey() }
-                        });
+                        const res = await fetch(url, { cache: 'no-store', headers: { 'x-api-key': key } });
                         if (!res.ok) continue;
                         const data = await res.json();
-                        const list = Array.isArray(data)
-                            ? data
-                            : Array.isArray(data?.data) ? data.data
-                            : Array.isArray(data?.tokens) ? data.tokens
-                            : Array.isArray(data?.results) ? data.results
-                            : [];
+                        const list = extractListFromStResponse(data);
                         if (!list.length) continue;
                         if (!solanaTrackerSampleLogged) {
                             solanaTrackerSampleLogged = true;
-                            console.log('[SolanaTracker sample]', url, list[0]);
+                            console.log('[SolanaTracker graduated sample]', url, list[0]);
                         }
-                        let changed = 0;
                         for (const item of list) {
-                            if (ingestSolanaTrackerToken(item)) changed++;
+                            if (ingestSolanaTrackerToken(item)) totalChanged++;
                         }
-                        if (changed) scheduleRender();
-                        return;
                     } catch {
                         // try next
                     }
                 }
+                if (totalChanged) scheduleRender();
+            }
+
+            // Fetch latest (not-yet-graduated) tokens for bonk + bags so they appear in the new/soon columns.
+            // Pump is handled via pumpportal WS; these two are REST-polled.
+            async function fetchLatestLaunchpadTokens() {
+                const key = getSolanaTrackerKey();
+                if (!key) return;
+                const markets = [
+                    { lp: 'bonk', market: 'letsbonk.fun' },
+                    { lp: 'bags', market: 'bags.fun' }
+                ];
+                let changed = 0;
+                for (const { lp, market } of markets) {
+                    const url = `https://data.solanatracker.io/search?markets=${encodeURIComponent(market)}&bonded=false&sortBy=createdAt&sortOrder=desc&limit=60`;
+                    try {
+                        const res = await fetch(url, { cache: 'no-store', headers: { 'x-api-key': key } });
+                        if (!res.ok) continue;
+                        const data = await res.json();
+                        const list = extractListFromStResponse(data);
+                        for (const item of list) {
+                            if (ingestStLiveToken(item, lp)) changed++;
+                        }
+                    } catch {
+                        // try next
+                    }
+                }
+                if (changed) scheduleRender();
+            }
+
+            // Ingest a non-graduated ST token (bonk/bags) into tokenMap.
+            function ingestStLiveToken(item, lpHint) {
+                if (!item || typeof item !== 'object') return false;
+                const tok = item.token || item;
+                const mint = tok?.mint || tok?.address || item.mint || item.address;
+                if (!mint) return false;
+                const pools = Array.isArray(item.pools) ? item.pools : (Array.isArray(tok.pools) ? tok.pools : []);
+                const pool = pools[0] || {};
+                const sourceMarket = pool?.market || pool?.dex || tok.source || item.market || '';
+                const launchpad = detectLaunchpadFromMarket(sourceMarket) || lpHint || '';
+                if (!launchpad) return false;
+                const mcUsd = Number(pool?.marketCap?.usd ?? item?.marketCap?.usd ?? item?.marketCap ?? tok?.marketCap?.usd ?? 0) || 0;
+                const volH24Usd = Number(pool?.txns?.volume24h ?? pool?.volume?.h24 ?? pool?.volume?.usd ?? item?.volume?.h24 ?? 0) || 0;
+                const volH1Usd = Number(pool?.txns?.volume1h ?? pool?.volume?.h1 ?? item?.volume?.h1 ?? 0) || 0;
+                const volM5Usd = Number(pool?.txns?.volume5m ?? pool?.volume?.m5 ?? 0) || 0;
+                const liquidityUsd = Number(pool?.liquidity?.usd ?? pool?.liquidity ?? item?.liquidity?.usd ?? 0) || 0;
+                const createdRaw = tok.createdOn || tok.createdAt || item.createdAt || pool?.createdAt || pool?.openTime;
+                const createdMs = toMsTimestamp(createdRaw) || Date.now();
+                const marketCapSol = solPriceUsd > 0 && mcUsd > 0 ? mcUsd / solPriceUsd : 0;
+                const volumeSol = solPriceUsd > 0 && volH24Usd > 0 ? volH24Usd / solPriceUsd : 0;
+                const existing = tokenMap.get(mint);
+                if (existing) {
+                    if (marketCapSol > 0) existing.marketCapSol = marketCapSol;
+                    if (volumeSol > (existing.volumeSol || 0)) existing.volumeSol = volumeSol;
+                    if (volH1Usd > 0) existing.volH1Usd = volH1Usd;
+                    if (volM5Usd > 0) existing.volM5Usd = volM5Usd;
+                    if (liquidityUsd > 0) existing.liquidityUsd = liquidityUsd;
+                    if (!existing.image_uri && (tok.image || tok.image_uri)) existing.image_uri = tok.image || tok.image_uri;
+                    if (!existing.twitter && tok.twitter) existing.twitter = tok.twitter;
+                    if (!existing.website && tok.website) existing.website = tok.website;
+                    if (!existing.telegram && tok.telegram) existing.telegram = tok.telegram;
+                    if (!existing.launchpad) existing.launchpad = launchpad;
+                    existing.lastDexUpdateMs = Date.now();
+                    if (mcUsd >= MIN_MC_USD && mcUsd <= MAX_MC_USD) existing.qualified = true;
+                    return true;
+                }
+                tokenMap.set(mint, {
+                    mint,
+                    symbol: String(tok.symbol || 'TKN').trim() || 'TKN',
+                    name: String(tok.name || 'unnamed').trim() || 'unnamed',
+                    uri: tok.uri || '',
+                    image_uri: tok.image || tok.image_uri || '',
+                    twitter: tok.twitter || '',
+                    website: tok.website || '',
+                    telegram: tok.telegram || '',
+                    createdMs,
+                    marketCapSol,
+                    volumeSol,
+                    volH1Usd,
+                    volM5Usd,
+                    liquidityUsd,
+                    lastDexUpdateMs: Date.now(),
+                    qualified: mcUsd >= MIN_MC_USD && mcUsd <= MAX_MC_USD,
+                    migrated: false,
+                    migratedAtMs: 0,
+                    launchpad
+                });
+                return true;
             }
 
             async function backfillRecentTokens() {
@@ -1390,7 +1556,8 @@
                     telegram: '',
                     createdMs: now,
                     marketCapSol: Number(data.marketCapSol) || 0,
-                    volumeSol: Number(data.solAmount) || 0
+                    volumeSol: Number(data.solAmount) || 0,
+                    launchpad: 'pump'
                 });
                 subscribeTokenTrade(mint);
                 if (data.uri) fetchTokenMetadata(mint, data.uri);
@@ -1566,15 +1733,17 @@
 
             ensureEnoughRows();
             normalizeCapBlocks();
-            renderEmptyState('Connecting to live pump.fun feed...');
+            renderEmptyState('Connecting to live token feed...');
             refreshSolPrice().then(() => {
                 backfillRecentTokens();
                 fetchGraduatedFromSolanaTracker();
+                fetchLatestLaunchpadTokens();
             });
             connectWebSocket();
             window.setInterval(refreshSolPrice, SOL_PRICE_REFRESH_MS);
             window.setInterval(backfillRecentTokens, 60 * 1000);
             window.setInterval(fetchGraduatedFromSolanaTracker, SOLANA_TRACKER_REFRESH_MS);
+            window.setInterval(fetchLatestLaunchpadTokens, SOLANA_TRACKER_REFRESH_MS);
             window.setInterval(tickAges, AGE_REFRESH_MS);
             window.setInterval(scheduleRender, 5000);
 
@@ -1755,6 +1924,27 @@
 
             tabButtons.forEach((btn) => {
                 btn.addEventListener('click', () => setActiveTab(btn.dataset.tabTarget));
+            });
+
+            document.querySelectorAll('.lp-filter').forEach((group) => {
+                const column = group.getAttribute('data-lp-filter');
+                if (!column || !launchpadFilters[column]) return;
+                group.addEventListener('click', (evt) => {
+                    const chip = evt.target.closest('.lp-chip');
+                    if (!chip || !group.contains(chip)) return;
+                    const lp = chip.getAttribute('data-lp');
+                    if (!lp) return;
+                    const set = launchpadFilters[column];
+                    if (set.has(lp)) {
+                        if (set.size === 1) return;
+                        set.delete(lp);
+                        chip.classList.remove('is-active');
+                    } else {
+                        set.add(lp);
+                        chip.classList.add('is-active');
+                    }
+                    scheduleRender();
+                });
             });
 
             window.addEventListener('resize', ensureEnoughRows);
